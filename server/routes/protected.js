@@ -79,18 +79,32 @@ router.post('/bank-accounts', async (req, res) => {
     const { account_name, bank_name, account_number, account_type, country, currency, current_balance, interest_rate } = req.body;
     
     // Validate required fields
-    if (!account_name || !bank_name || !country) {
+    if (!account_name || !account_name.trim() || !bank_name || !bank_name.trim() || !country) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Account name, bank name, and country are required' 
       });
     }
 
-    console.log('Inserting bank account:', { userId, account_name, bank_name, country, currency, current_balance });
+    // Convert and sanitize values
+    const sanitizedCurrentBalance = current_balance && current_balance !== '' ? parseFloat(current_balance) : 0;
+    const sanitizedInterestRate = interest_rate && interest_rate !== '' ? parseFloat(interest_rate) : null;
+
+    console.log('Inserting bank account:', { userId, account_name, bank_name, country, currency, sanitizedCurrentBalance });
     
     const result = await db.run(
       'INSERT INTO bank_accounts (user_id, account_name, bank_name, account_number, account_type, country, currency, current_balance, interest_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, account_name, bank_name, account_number || null, account_type || null, country, currency || 'USD', current_balance || 0, interest_rate || null]
+      [
+        userId, 
+        account_name.trim(), 
+        bank_name.trim(), 
+        account_number ? account_number.trim() : null, 
+        account_type ? account_type.trim() : null, 
+        country.trim(), 
+        currency || 'USD', 
+        sanitizedCurrentBalance, 
+        sanitizedInterestRate
+      ]
     );
     
     console.log('Bank account created successfully:', result.id);
@@ -242,15 +256,17 @@ router.post('/expenses', async (req, res) => {
     const { category, description, amount, currency, payment_method, credit_card_id, debit_card_id, date } = req.body;
     
     // Validate required fields
-    if (!category || !amount) {
+    if (!category || !category.trim() || !amount) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Category and amount are required' 
       });
     }
 
-    const creditCardId = credit_card_id && credit_card_id !== '' ? credit_card_id : null;
-    const debitCardId = debit_card_id && debit_card_id !== '' ? debit_card_id : null;
+    // Convert and sanitize values
+    const sanitizedAmount = parseFloat(amount) || 0;
+    const creditCardId = credit_card_id && credit_card_id !== '' ? parseInt(credit_card_id) : null;
+    const debitCardId = debit_card_id && debit_card_id !== '' ? parseInt(debit_card_id) : null;
     
     // Verify cards belong to user if provided
     if (creditCardId) {
@@ -269,19 +285,29 @@ router.post('/expenses', async (req, res) => {
 
     const result = await db.run(
       'INSERT INTO expenses (user_id, category, description, amount, currency, payment_method, credit_card_id, debit_card_id, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, category, description || null, amount, currency || 'USD', payment_method || null, creditCardId, debitCardId, date || new Date().toISOString().split('T')[0]]
+      [
+        userId, 
+        category.trim(), 
+        description ? description.trim() : null, 
+        sanitizedAmount, 
+        currency || 'USD', 
+        payment_method ? payment_method.trim() : null, 
+        creditCardId, 
+        debitCardId, 
+        date || new Date().toISOString().split('T')[0]
+      ]
     );
     
     // Update credit card balance if paid with credit card
     if (creditCardId) {
-      await db.run('UPDATE credit_cards SET current_balance = current_balance + ? WHERE id = ? AND user_id = ?', [amount, creditCardId, userId]);
+      await db.run('UPDATE credit_cards SET current_balance = current_balance + ? WHERE id = ? AND user_id = ?', [sanitizedAmount, creditCardId, userId]);
     }
     
     // Update bank account balance if paid with debit card
     if (debitCardId) {
       const debitCard = await db.query('SELECT bank_account_id FROM debit_cards WHERE id = ? AND user_id = ?', [debitCardId, userId]);
       if (debitCard.length > 0) {
-        await db.run('UPDATE bank_accounts SET current_balance = current_balance - ? WHERE id = ? AND user_id = ?', [amount, debitCard[0].bank_account_id, userId]);
+        await db.run('UPDATE bank_accounts SET current_balance = current_balance - ? WHERE id = ? AND user_id = ?', [sanitizedAmount, debitCard[0].bank_account_id, userId]);
       }
     }
     res.json({ id: result.id, message: 'Expense added successfully' });
@@ -383,16 +409,43 @@ router.post('/financial-goals', async (req, res) => {
     const { name, goal_type, target_amount, current_amount, target_date, priority, status, description } = req.body;
     
     // Validate required fields
-    if (!name || !target_amount) {
+    if (!name || !name.trim() || !target_amount) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Name and target amount are required' 
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedTargetAmount = parseFloat(target_amount) || 0;
+    const sanitizedCurrentAmount = current_amount && current_amount !== '' ? parseFloat(current_amount) : 0;
+    
+    // Handle target_date - convert date string to timestamp if provided
+    let sanitizedTargetDate = null;
+    if (target_date && target_date !== '') {
+      if (typeof target_date === 'string') {
+        const dateObj = new Date(target_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedTargetDate = Math.floor(dateObj.getTime() / 1000);
+        }
+      } else if (typeof target_date === 'number') {
+        sanitizedTargetDate = target_date;
+      }
+    }
+
     const result = await db.run(
       'INSERT INTO financial_goals (user_id, name, goal_type, target_amount, current_amount, target_date, priority, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, name, goal_type || null, target_amount, current_amount || 0, target_date || null, priority || 'medium', status || 'active', description || null]
+      [
+        userId, 
+        name.trim(), 
+        goal_type ? goal_type.trim() : null, 
+        sanitizedTargetAmount, 
+        sanitizedCurrentAmount, 
+        sanitizedTargetDate, 
+        priority || 'medium', 
+        status || 'active', 
+        description ? description.trim() : null
+      ]
     );
     res.json({ id: result.id, message: 'Financial goal added successfully' });
   } catch (error) {
@@ -438,16 +491,51 @@ router.post('/bill-reminders', async (req, res) => {
     const { name, amount, due_date, frequency, category, is_paid, credit_card_id, bank_account_id, notes } = req.body;
     
     // Validate required fields
-    if (!name || !amount || !due_date) {
+    if (!name || !name.trim() || !amount || !due_date) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Name, amount, and due date are required' 
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedAmount = parseFloat(amount) || 0;
+    const sanitizedCreditCardId = credit_card_id && credit_card_id !== '' ? parseInt(credit_card_id) : null;
+    const sanitizedBankAccountId = bank_account_id && bank_account_id !== '' ? parseInt(bank_account_id) : null;
+    
+    // Handle due_date - convert date string to timestamp if provided
+    let sanitizedDueDate = null;
+    if (due_date && due_date !== '') {
+      if (typeof due_date === 'string') {
+        const dateObj = new Date(due_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedDueDate = Math.floor(dateObj.getTime() / 1000);
+        } else {
+          // Try parsing as timestamp
+          const timestamp = parseInt(due_date);
+          if (!isNaN(timestamp)) {
+            sanitizedDueDate = timestamp;
+          }
+        }
+      } else if (typeof due_date === 'number') {
+        sanitizedDueDate = due_date;
+      }
+    }
+
     const result = await db.run(
       'INSERT INTO bill_reminders (user_id, name, amount, due_date, frequency, category, is_paid, credit_card_id, bank_account_id, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, name, amount, due_date, frequency || 'monthly', category || null, is_paid ? 1 : 0, credit_card_id || null, bank_account_id || null, notes || null]
+      [
+        userId, 
+        name.trim(), 
+        sanitizedAmount, 
+        sanitizedDueDate, 
+        frequency || 'monthly', 
+        category ? category.trim() : null, 
+        is_paid ? 1 : 0, 
+        sanitizedCreditCardId, 
+        sanitizedBankAccountId, 
+        notes ? notes.trim() : null
+      ]
     );
     res.json({ id: result.id, message: 'Bill reminder added successfully' });
   } catch (error) {
@@ -485,23 +573,55 @@ router.post('/savings', async (req, res) => {
     const { name, bank_account_id, account_type, current_balance, interest_rate, goal_amount, target_date, currency } = req.body;
     
     // Validate required fields
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Account name is required' 
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedBankAccountId = bank_account_id && bank_account_id !== '' ? parseInt(bank_account_id) : null;
+    const sanitizedCurrentBalance = current_balance && current_balance !== '' ? parseFloat(current_balance) : 0;
+    const sanitizedInterestRate = interest_rate && interest_rate !== '' ? parseFloat(interest_rate) : null;
+    const sanitizedGoalAmount = goal_amount && goal_amount !== '' ? parseFloat(goal_amount) : null;
+    
+    // Handle target_date - convert date string to timestamp if provided
+    let sanitizedTargetDate = null;
+    if (target_date && target_date !== '') {
+      if (typeof target_date === 'string') {
+        const dateObj = new Date(target_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedTargetDate = Math.floor(dateObj.getTime() / 1000); // Convert to Unix timestamp (seconds)
+        }
+      } else if (typeof target_date === 'number') {
+        sanitizedTargetDate = target_date;
+      }
+    }
+
     const result = await db.run(
       'INSERT INTO savings (user_id, account_name, bank_account_id, account_type, current_balance, interest_rate, goal_amount, target_date, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, name, bank_account_id || null, account_type || null, current_balance || 0, interest_rate || null, goal_amount || null, target_date || null, currency || 'USD']
+      [
+        userId, 
+        name.trim(), 
+        sanitizedBankAccountId, 
+        account_type ? account_type.trim() : null, 
+        sanitizedCurrentBalance, 
+        sanitizedInterestRate, 
+        sanitizedGoalAmount, 
+        sanitizedTargetDate, 
+        currency || 'USD'
+      ]
     );
+    
+    console.log('Savings account created successfully:', result.id);
     res.json({ id: result.id, message: 'Savings account added successfully' });
   } catch (error) {
     console.error('Savings creation error:', error);
+    console.error('Error details:', { message: error.message, code: error.code, body: req.body });
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
+      message: error.message || 'Failed to create savings account',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
@@ -609,16 +729,43 @@ router.post('/stocks', requireTier('premium'), async (req, res) => {
     const { symbol, shares, purchase_price, current_price, currency, purchase_date, company_name } = req.body;
     
     // Validate required fields
-    if (!symbol || !shares || !purchase_price) {
+    if (!symbol || !symbol.trim() || !shares || !purchase_price) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Symbol, shares, and purchase price are required' 
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedShares = parseFloat(shares) || 0;
+    const sanitizedPurchasePrice = parseFloat(purchase_price) || 0;
+    const sanitizedCurrentPrice = current_price && current_price !== '' ? parseFloat(current_price) : sanitizedPurchasePrice;
+    
+    // Handle purchase_date - convert date string to timestamp if provided
+    let sanitizedPurchaseDate = null;
+    if (purchase_date && purchase_date !== '') {
+      if (typeof purchase_date === 'string') {
+        const dateObj = new Date(purchase_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedPurchaseDate = Math.floor(dateObj.getTime() / 1000);
+        }
+      } else if (typeof purchase_date === 'number') {
+        sanitizedPurchaseDate = purchase_date;
+      }
+    }
+
     const result = await db.run(
       'INSERT INTO stocks (user_id, symbol, shares, purchase_price, current_price, currency, purchase_date, company_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, symbol, shares || 0, purchase_price, current_price || purchase_price || 0, currency || 'USD', purchase_date || null, company_name || null]
+      [
+        userId, 
+        symbol.trim().toUpperCase(), 
+        sanitizedShares, 
+        sanitizedPurchasePrice, 
+        sanitizedCurrentPrice, 
+        currency || 'USD', 
+        sanitizedPurchaseDate, 
+        company_name ? company_name.trim() : null
+      ]
     );
     res.json({ id: result.id, message: 'Stock added successfully' });
   } catch (error) {
@@ -1263,16 +1410,61 @@ router.post('/installments', async (req, res) => {
     const { credit_card_id, description, total_amount, remaining_amount, monthly_payment, interest_rate, start_date, end_date, status, currency } = req.body;
     
     // Validate required fields
-    if (!description || !total_amount || !monthly_payment) {
+    if (!description || !description.trim() || !total_amount || !monthly_payment) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Description, total amount, and monthly payment are required' 
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedCreditCardId = credit_card_id && credit_card_id !== '' ? parseInt(credit_card_id) : null;
+    const sanitizedTotalAmount = parseFloat(total_amount) || 0;
+    const sanitizedRemainingAmount = remaining_amount && remaining_amount !== '' ? parseFloat(remaining_amount) : sanitizedTotalAmount;
+    const sanitizedMonthlyPayment = parseFloat(monthly_payment) || 0;
+    const sanitizedInterestRate = interest_rate && interest_rate !== '' ? parseFloat(interest_rate) : null;
+    
+    // Handle dates - convert date strings to timestamps if provided
+    let sanitizedStartDate = null;
+    let sanitizedEndDate = null;
+    
+    if (start_date && start_date !== '') {
+      if (typeof start_date === 'string') {
+        const dateObj = new Date(start_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedStartDate = Math.floor(dateObj.getTime() / 1000);
+        }
+      } else if (typeof start_date === 'number') {
+        sanitizedStartDate = start_date;
+      }
+    }
+    
+    if (end_date && end_date !== '') {
+      if (typeof end_date === 'string') {
+        const dateObj = new Date(end_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedEndDate = Math.floor(dateObj.getTime() / 1000);
+        }
+      } else if (typeof end_date === 'number') {
+        sanitizedEndDate = end_date;
+      }
+    }
+
     const result = await db.run(
       'INSERT INTO installments (user_id, credit_card_id, description, total_amount, remaining_amount, monthly_payment, interest_rate, start_date, end_date, status, currency) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, credit_card_id || null, description, total_amount, remaining_amount || total_amount, monthly_payment, interest_rate || null, start_date || null, end_date || null, status || 'active', currency || 'USD']
+      [
+        userId, 
+        sanitizedCreditCardId, 
+        description.trim(), 
+        sanitizedTotalAmount, 
+        sanitizedRemainingAmount, 
+        sanitizedMonthlyPayment, 
+        sanitizedInterestRate, 
+        sanitizedStartDate, 
+        sanitizedEndDate, 
+        status || 'active', 
+        currency || 'USD'
+      ]
     );
     res.json({ id: result.id, message: 'Installment added successfully' });
   } catch (error) {
@@ -1365,11 +1557,46 @@ router.post('/loans', async (req, res) => {
     } = req.body;
     
     // Validate required fields
-    if (!loan_name || !loan_type || !principal_amount || !remaining_balance || !monthly_payment) {
+    if (!loan_name || !loan_name.trim() || !loan_type || !principal_amount || !remaining_balance || !monthly_payment) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         message: 'Loan name, type, principal amount, remaining balance, and monthly payment are required' 
       });
+    }
+
+    // Convert and sanitize values
+    const sanitizedCreditCardId = credit_card_id && credit_card_id !== '' ? parseInt(credit_card_id) : null;
+    const sanitizedBankAccountId = bank_account_id && bank_account_id !== '' ? parseInt(bank_account_id) : null;
+    const sanitizedPrincipalAmount = parseFloat(principal_amount) || 0;
+    const sanitizedRemainingBalance = parseFloat(remaining_balance) || 0;
+    const sanitizedMonthlyPayment = parseFloat(monthly_payment) || 0;
+    const sanitizedInterestRate = interest_rate && interest_rate !== '' ? parseFloat(interest_rate) : null;
+    const sanitizedPaymentDay = payment_day && payment_day !== '' ? parseInt(payment_day) : null;
+    
+    // Handle dates - convert date strings to timestamps if provided
+    let sanitizedStartDate = null;
+    let sanitizedEndDate = null;
+    
+    if (start_date && start_date !== '') {
+      if (typeof start_date === 'string') {
+        const dateObj = new Date(start_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedStartDate = Math.floor(dateObj.getTime() / 1000);
+        }
+      } else if (typeof start_date === 'number') {
+        sanitizedStartDate = start_date;
+      }
+    }
+    
+    if (end_date && end_date !== '') {
+      if (typeof end_date === 'string') {
+        const dateObj = new Date(end_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedEndDate = Math.floor(dateObj.getTime() / 1000);
+        }
+      } else if (typeof end_date === 'number') {
+        sanitizedEndDate = end_date;
+      }
     }
 
     const result = await db.run(
@@ -1379,12 +1606,22 @@ router.post('/loans', async (req, res) => {
         start_date, end_date, payment_day, status, notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        userId, loan_name, loan_type || 'Personal', lender_name || null, 
-        credit_card_id || null, bank_account_id || null,
-        principal_amount, remaining_balance, monthly_payment, 
-        interest_rate || null, currency || 'USD',
-        start_date || null, end_date || null, payment_day || null,
-        status || 'active', notes || null
+        userId, 
+        loan_name.trim(), 
+        loan_type || 'Personal', 
+        lender_name ? lender_name.trim() : null, 
+        sanitizedCreditCardId, 
+        sanitizedBankAccountId,
+        sanitizedPrincipalAmount, 
+        sanitizedRemainingBalance, 
+        sanitizedMonthlyPayment, 
+        sanitizedInterestRate, 
+        currency || 'USD',
+        sanitizedStartDate, 
+        sanitizedEndDate, 
+        sanitizedPaymentDay,
+        status || 'active', 
+        notes ? notes.trim() : null
       ]
     );
     res.json({ id: result.id, message: 'Loan added successfully' });
