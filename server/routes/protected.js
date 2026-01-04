@@ -146,16 +146,55 @@ router.post('/credit-cards', async (req, res) => {
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedBankAccountId = bank_account_id && bank_account_id !== '' ? parseInt(bank_account_id) : null;
+    const sanitizedCreditLimit = credit_limit && credit_limit !== '' ? parseFloat(credit_limit) : 0;
+    const sanitizedCurrentBalance = current_balance && current_balance !== '' ? parseFloat(current_balance) : 0;
+    const sanitizedInterestRate = interest_rate && interest_rate !== '' ? parseFloat(interest_rate) : null;
+    
+    // Handle due_date - convert date string to timestamp if provided, or null
+    let sanitizedDueDate = null;
+    if (due_date && due_date !== '') {
+      if (typeof due_date === 'string') {
+        const dateObj = new Date(due_date);
+        if (!isNaN(dateObj.getTime())) {
+          sanitizedDueDate = Math.floor(dateObj.getTime() / 1000); // Convert to Unix timestamp (seconds)
+        }
+      } else if (typeof due_date === 'number') {
+        sanitizedDueDate = due_date;
+      }
+    }
+
     const result = await db.run(
       'INSERT INTO credit_cards (user_id, name, bank_account_id, bank_name, country, currency, credit_limit, current_balance, interest_rate, due_date, card_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, name, bank_account_id || null, bank_name || null, country, currency || 'USD', credit_limit || 0, current_balance || 0, interest_rate || null, due_date || null, card_type || 'Credit']
+      [
+        userId, 
+        name.trim(), 
+        sanitizedBankAccountId, 
+        bank_name ? bank_name.trim() : null, 
+        country.trim(), 
+        currency || 'USD', 
+        sanitizedCreditLimit, 
+        sanitizedCurrentBalance, 
+        sanitizedInterestRate, 
+        sanitizedDueDate, 
+        card_type || 'Credit'
+      ]
     );
+    
+    console.log('Credit card created successfully:', result.id);
     res.json({ id: result.id, message: 'Credit card added successfully' });
   } catch (error) {
     console.error('Credit card creation error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+      body: req.body
+    });
     res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
+      message: error.message || 'Failed to create credit card',
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
