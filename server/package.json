@@ -1,0 +1,26 @@
+{
+  "name": "financial-planner-server",
+  "version": "1.0.0",
+  "description": "Financial Planner Backend API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "google-auth-library": "^10.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.7",
+    "pg": "^8.11.3",
+    "resend": "^3.2.0",
+    "sqlite3": "^5.1.6",
+    "stripe": "^14.7.0",
+    "validator": "^13.11.0"
+  }
+}

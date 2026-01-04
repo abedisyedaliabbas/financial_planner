@@ -1,0 +1,95 @@
+.premium-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.premium-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: white;
+}
+
+.premium-banner-icon {
+  font-size: 32px;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.premium-banner-text {
+  flex: 1;
+}
+
+.premium-banner-text h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.premium-banner-text h3 .crown-icon {
+  color: #fbbf24;
+  font-size: 18px;
+}
+
+.premium-banner-text p {
+  margin: 0;
+  font-size: 15px;
+  opacity: 0.95;
+  line-height: 1.5;
+}
+
+.premium-banner-action {
+  flex-shrink: 0;
+}
+
+.btn-premium-upgrade {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: white;
+  color: #667eea;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-premium-upgrade:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: #f9fafb;
+}
+
+.btn-premium-upgrade .crown-icon {
+  color: #fbbf24;
+}
+
+@media (max-width: 768px) {
+  .premium-banner-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .premium-banner-text h3 {
+    justify-content: center;
+  }
+
+  .premium-banner-action {
+    width: 100%;
+  }
+
+  .btn-premium-upgrade {
+    width: 100%;
+    justify-content: center;
+  }
+}
+

@@ -1,0 +1,34 @@
+.App {
+  min-height: 100vh;
+}
+
+/* App Layout with Sidebar */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 280px;
+  min-height: 100vh;
+  padding: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+/* Mobile Layout */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 20px 15px;
+    padding-top: 70px; /* Space for mobile menu button */
+  }
+}
+
+/* Ensure text is visible on all backgrounds */
+.main-content * {
+  color: var(--text-primary);
+}
+
+/* Add any global app styles here */
+

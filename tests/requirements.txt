@@ -1,0 +1,9 @@
+selenium==4.15.2
+webdriver-manager==4.0.1
+pytest==7.4.3
+pytest-html==4.1.1
+pytest-timeout==2.2.0
+faker==20.1.0
+python-dotenv==1.0.0
+
+

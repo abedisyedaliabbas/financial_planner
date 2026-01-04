@@ -1,0 +1,487 @@
+/* ============================================
+   COMPREHENSIVE MOBILE OPTIMIZATIONS
+   iOS Safari & Android Chrome Optimized
+   ============================================ */
+
+/* iOS Safe Area Insets */
+@supports (padding: max(0px)) {
+  .main-content,
+  .page-container,
+  .modal-content {
+    padding-left: max(15px, env(safe-area-inset-left));
+    padding-right: max(15px, env(safe-area-inset-right));
+  }
+  
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevent iOS bounce scrolling - but allow normal scrolling */
+html {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  width: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available; /* iOS fix */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain; /* Prevent pull-to-refresh */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  min-height: -webkit-fill-available; /* iOS fix */
+}
+
+/* Touch-friendly button sizes (minimum 44x44px for iOS) */
+button,
+.btn,
+input[type="button"],
+input[type="submit"],
+a.btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 12px 20px;
+  font-size: 16px; /* Prevents iOS zoom on focus */
+  -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+  touch-action: manipulation; /* Prevents double-tap zoom */
+}
+
+/* Input fields - prevent zoom on iOS */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="tel"],
+select,
+textarea {
+  font-size: 16px !important; /* Prevents iOS zoom on focus */
+  padding: 14px 16px;
+  min-height: 44px;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+}
+
+/* Fix iOS select styling */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+  padding-right: 40px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  /* Smooth scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* Prevent text selection on buttons */
+  button,
+  .btn,
+  .sidebar-link {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Optimize tables for mobile - make them scrollable */
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin: 0 -15px;
+    padding: 0 15px;
+  }
+
+  .table {
+    min-width: 600px; /* Ensure table doesn't get too compressed */
+    font-size: 13px;
+  }
+
+  .table th,
+  .table td {
+    padding: 10px 8px;
+    white-space: nowrap;
+  }
+
+  /* Alternative: Card-based table for very small screens */
+  .table-mobile-card {
+    display: none;
+  }
+
+  @media (max-width: 480px) {
+    .table {
+      display: none;
+    }
+
+    .table-mobile-card {
+      display: block;
+    }
+
+    .mobile-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 4px var(--shadow);
+    }
+
+    .mobile-card-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .mobile-card-row:last-child {
+      border-bottom: none;
+    }
+
+    .mobile-card-label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .mobile-card-value {
+      color: var(--text-primary);
+      font-size: 14px;
+      text-align: right;
+      flex: 1;
+      margin-left: 15px;
+    }
+  }
+
+  /* Modal optimizations for mobile */
+  .modal {
+    padding: 0;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .modal-content {
+    max-width: 100%;
+    width: 100%;
+    max-height: 90vh;
+    border-radius: 20px 20px 0 0;
+    padding: 25px 20px;
+    margin: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+  }
+
+  .modal-header {
+    position: sticky;
+    top: 0;
+    background: var(--card-bg);
+    z-index: 10;
+    padding-top: 0;
+    margin-top: -25px;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+  }
+
+  /* Close button - larger for mobile */
+  .close-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Form optimizations */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    font-size: 14px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    font-size: 16px; /* Prevents iOS zoom */
+    padding: 14px 16px;
+    border-radius: 10px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  /* Button groups - stack on mobile */
+  .button-group {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .button-group button,
+  .button-group .btn {
+    width: 100%;
+  }
+
+  /* Summary cards - single column on mobile */
+  .summary-cards {
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+
+  /* Tabs - horizontal scroll on mobile */
+  .tabs-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+  }
+
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-button {
+    padding: 12px 20px;
+    font-size: 14px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Sidebar mobile improvements */
+  .sidebar {
+    width: 280px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .sidebar-link {
+    padding: 14px 18px;
+    font-size: 15px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Mobile menu toggle - larger touch target */
+  .mobile-menu-toggle {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 12px;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Page container padding */
+  .page-container {
+    padding: 15px;
+    padding-top: 70px; /* Space for mobile menu */
+  }
+
+  /* Card spacing */
+  .card {
+    margin-bottom: 15px;
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  /* Text size adjustments */
+  h1 {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+
+  h2 {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: 18px;
+    line-height: 1.3;
+  }
+
+  /* Prevent horizontal scroll */
+  body,
+  html,
+  #root,
+  .App,
+  .app-layout,
+  .main-content {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Fix iOS input shadow */
+  input,
+  select,
+  textarea {
+    box-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Improve touch feedback */
+  button:active,
+  .btn:active,
+  .sidebar-link:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  /* Loading states */
+  .loading {
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  /* Empty states */
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+
+  .empty-state p {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+}
+
+/* Very small screens (iPhone SE, etc.) */
+@media (max-width: 375px) {
+  .page-container {
+    padding: 12px;
+    padding-top: 65px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  .modal-content {
+    padding: 20px 15px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .summary-cards {
+    gap: 10px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .modal-content {
+    max-height: 85vh;
+  }
+
+  .sidebar {
+    width: 240px;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents zoom */
+  }
+
+  /* Fix iOS button styling */
+  button {
+    -webkit-appearance: none;
+    appearance: none;
+    border-radius: 8px;
+  }
+
+  /* Fix iOS select arrow */
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+  }
+}
+
+/* Android Chrome specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+  }
+}
+
+/* Prevent pull-to-refresh on mobile (can interfere with scrolling) */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Smooth animations */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a,
+.sidebar-link {
+  -webkit-tap-highlight-color: rgba(102, 126, 234, 0.2);
+}
+
+/* Fix for iOS address bar */
+@supports (-webkit-touch-callout: none) {
+  .main-content {
+    min-height: -webkit-fill-available;
+  }
+  
+  .app-layout {
+    min-height: -webkit-fill-available;
+  }
+}
+
