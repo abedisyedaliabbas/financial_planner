@@ -194,22 +194,43 @@ const Dashboard = () => {
 
   const handleExportAll = async () => {
     try {
-      const response = await fetch('/api/export/all');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in to export data');
+        return;
+      }
+
+      const response = await fetch('/api/export/all', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to export data' }));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
       const data = await response.json();
       
       const sheets = [
-        { name: 'Bank Accounts', data: data.bankAccounts },
-        { name: 'Credit Cards', data: data.creditCards },
-        { name: 'Expenses', data: data.expenses },
-        { name: 'Savings', data: data.savings },
-        { name: 'Stocks', data: data.stocks },
-        { name: 'Income', data: data.income }
+        { name: 'Bank Accounts', data: data.bankAccounts || [] },
+        { name: 'Credit Cards', data: data.creditCards || [] },
+        { name: 'Expenses', data: data.expenses || [] },
+        { name: 'Savings', data: data.savings || [] },
+        { name: 'Stocks', data: data.stocks || [] },
+        { name: 'Income', data: data.income || [] },
+        { name: 'Debit Cards', data: data.debitCards || [] },
+        { name: 'Loans', data: data.loans || [] },
+        { name: 'Goals', data: data.goals || [] },
+        { name: 'Bills', data: data.bills || [] }
       ];
 
-      exportMultipleSheets(sheets, `financial_report_${new Date().toISOString().split('T')[0]}`);
+      await exportMultipleSheets(sheets, `financial_report_${new Date().toISOString().split('T')[0]}`);
     } catch (error) {
       console.error('Export error:', error);
-      alert('Error exporting data');
+      alert('Error exporting data: ' + (error.message || 'Please try again'));
     }
   };
 

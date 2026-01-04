@@ -1493,25 +1493,38 @@ router.get('/export/all', async (req, res) => {
   try {
     const userId = req.user.id;
     
-    const [bankAccounts, creditCards, expenses, savings, stocks, income] = await Promise.all([
-      db.all('SELECT * FROM bank_accounts WHERE user_id = ?', [userId]),
-      db.all('SELECT * FROM credit_cards WHERE user_id = ?', [userId]),
-      db.all('SELECT * FROM expenses WHERE user_id = ?', [userId]),
-      db.all('SELECT * FROM savings WHERE user_id = ?', [userId]),
-      db.all('SELECT * FROM stocks WHERE user_id = ?', [userId]),
-      db.all('SELECT * FROM income WHERE user_id = ?', [userId])
+    // Use db.query instead of db.all for compatibility
+    const [bankAccounts, creditCards, expenses, savings, stocks, income, debitCards, loans, goals, bills] = await Promise.all([
+      db.query('SELECT * FROM bank_accounts WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM credit_cards WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM expenses WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM savings WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM stocks WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM income WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM debit_cards WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM loans WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM financial_goals WHERE user_id = ?', [userId]).catch(() => []),
+      db.query('SELECT * FROM bill_reminders WHERE user_id = ?', [userId]).catch(() => [])
     ]);
     
     res.json({
-      bankAccounts,
-      creditCards,
-      expenses,
-      savings,
-      stocks,
-      income
+      bankAccounts: bankAccounts || [],
+      creditCards: creditCards || [],
+      expenses: expenses || [],
+      savings: savings || [],
+      stocks: stocks || [],
+      income: income || [],
+      debitCards: debitCards || [],
+      loans: loans || [],
+      goals: goals || [],
+      bills: bills || []
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Export all data error:', error);
+    res.status(500).json({ 
+      error: 'Failed to export data',
+      message: error.message 
+    });
   }
 });
 

@@ -25,30 +25,80 @@ const loadJsPDF = async () => {
 // Export data to Excel
 export const exportToExcel = async (data, filename = 'financial_data') => {
   try {
+    if (!data || data.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Clean data - remove null/undefined values and convert to strings where needed
+    const cleanedData = data.map(row => {
+      const cleaned = {};
+      Object.keys(row).forEach(key => {
+        const value = row[key];
+        if (value === null || value === undefined) {
+          cleaned[key] = '';
+        } else if (typeof value === 'object') {
+          cleaned[key] = JSON.stringify(value);
+        } else {
+          cleaned[key] = value;
+        }
+      });
+      return cleaned;
+    });
+
     const xlsx = await loadXLSX();
-    const ws = xlsx.utils.json_to_sheet(data);
+    const ws = xlsx.utils.json_to_sheet(cleanedData);
     const wb = xlsx.utils.book_new();
     xlsx.utils.book_append_sheet(wb, ws, 'Data');
     xlsx.writeFile(wb, `${filename}.xlsx`);
   } catch (error) {
     console.error('Error exporting to Excel:', error);
-    alert('Excel export requires xlsx package. Please install dependencies: npm install');
+    alert('Error exporting to Excel: ' + (error.message || 'Please ensure xlsx package is installed'));
   }
 };
 
 // Export multiple sheets to Excel
 export const exportMultipleSheets = async (sheets, filename = 'financial_report') => {
   try {
+    if (!sheets || sheets.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
     const xlsx = await loadXLSX();
     const wb = xlsx.utils.book_new();
+    
     sheets.forEach(sheet => {
-      const ws = xlsx.utils.json_to_sheet(sheet.data);
-      xlsx.utils.book_append_sheet(wb, ws, sheet.name);
+      if (!sheet.data || sheet.data.length === 0) {
+        // Create empty sheet with headers if data is empty
+        const emptyData = [{}];
+        const ws = xlsx.utils.json_to_sheet(emptyData);
+        xlsx.utils.book_append_sheet(wb, ws, sheet.name);
+      } else {
+        // Clean data before exporting
+        const cleanedData = sheet.data.map(row => {
+          const cleaned = {};
+          Object.keys(row).forEach(key => {
+            const value = row[key];
+            if (value === null || value === undefined) {
+              cleaned[key] = '';
+            } else if (typeof value === 'object') {
+              cleaned[key] = JSON.stringify(value);
+            } else {
+              cleaned[key] = value;
+            }
+          });
+          return cleaned;
+        });
+        const ws = xlsx.utils.json_to_sheet(cleanedData);
+        xlsx.utils.book_append_sheet(wb, ws, sheet.name);
+      }
     });
+    
     xlsx.writeFile(wb, `${filename}.xlsx`);
   } catch (error) {
     console.error('Error exporting to Excel:', error);
-    alert('Excel export requires xlsx package. Please install dependencies: npm install');
+    alert('Error exporting to Excel: ' + (error.message || 'Please ensure xlsx package is installed'));
   }
 };
 
@@ -106,22 +156,42 @@ export const exportChartAsPDF = async (chartId, filename = 'chart') => {
 
 // Export data to CSV
 export const exportToCSV = (data, filename = 'financial_data') => {
-  if (!data || data.length === 0) return;
+  try {
+    if (!data || data.length === 0) {
+      alert('No data to export');
+      return;
+    }
 
-  const headers = Object.keys(data[0]);
-  const csvContent = [
-    headers.join(','),
-    ...data.map(row => headers.map(header => {
-      const value = row[header];
-      return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
-    }).join(','))
-  ].join('\n');
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(header => {
+        const value = row[header];
+        // Handle null, undefined, and special characters
+        if (value === null || value === undefined) {
+          return '';
+        }
+        const stringValue = String(value);
+        // Escape quotes and wrap in quotes if contains comma, quote, or newline
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      }).join(','))
+    ].join('\n');
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${filename}.csv`;
-  link.click();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    console.error('Error exporting to CSV:', error);
+    alert('Error exporting to CSV: ' + error.message);
+  }
 };
 
 // Format data for export
