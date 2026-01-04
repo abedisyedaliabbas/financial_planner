@@ -186,25 +186,10 @@ const DashboardEnhanced = () => {
 
   const handleExportAll = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please log in to export data');
-        return;
-      }
-
-      const response = await fetch('/api/export/all', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to export data' }));
-        throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
-
-      const data = await response.json();
+      // Use the API service which automatically includes auth token
+      const api = (await import('../services/api')).default;
+      const response = await api.get('/export/all');
+      const data = response.data;
       
       const sheets = [
         { name: 'Bank Accounts', data: data.bankAccounts || [] },
@@ -222,7 +207,12 @@ const DashboardEnhanced = () => {
       await exportMultipleSheets(sheets, `financial_report_${new Date().toISOString().split('T')[0]}`);
     } catch (error) {
       console.error('Export error:', error);
-      alert('Error exporting data: ' + (error.message || 'Please try again'));
+      if (error.response?.status === 401) {
+        alert('Session expired. Please log in again.');
+        window.location.href = '/login';
+      } else {
+        alert('Error exporting data: ' + (error.response?.data?.error || error.message || 'Please try again'));
+      }
     }
   };
 
