@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../services/api';
@@ -20,6 +20,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const googleButtonRef = useRef(null);
+  const googleInitializedRef = useRef(false);
   
   // Check for messages from navigation state
   useEffect(() => {
@@ -31,77 +32,8 @@ const Login = () => {
     }
   }, [location]);
 
-  // Initialize Google Sign-In
-  useEffect(() => {
-    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-    console.log('🔍 Google Sign-In Debug:', {
-      hasClientId: !!googleClientId,
-      clientId: googleClientId ? googleClientId.substring(0, 20) + '...' : 'NOT SET',
-      hasGoogleScript: typeof window.google !== 'undefined',
-      hasButtonRef: !!googleButtonRef.current,
-      envVar: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET'
-    });
-    
-    if (!googleClientId) {
-      console.error('❌ REACT_APP_GOOGLE_CLIENT_ID is not set! Restart the frontend server after creating .env.local');
-      return;
-    }
-    
-    const initGoogleSignIn = () => {
-      if (window.google && googleButtonRef.current && googleClientId) {
-        try {
-          console.log('✅ Initializing Google Sign-In button...');
-          window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: handleGoogleSignIn,
-          });
-
-          window.google.accounts.id.renderButton(
-            googleButtonRef.current,
-            {
-              theme: 'outline',
-              size: 'large',
-              width: '100%',
-              text: 'signin_with',
-              locale: 'en'
-            }
-          );
-          console.log('✅ Google Sign-In button rendered successfully');
-        } catch (error) {
-          console.error('❌ Error initializing Google Sign-In:', error);
-        }
-      } else {
-        console.warn('⚠️ Google Sign-In not ready:', {
-          hasGoogle: !!window.google,
-          hasRef: !!googleButtonRef.current,
-          hasClientId: !!googleClientId
-        });
-      }
-    };
-
-    // Wait for Google script to load
-    if (window.google && window.google.accounts) {
-      initGoogleSignIn();
-    } else {
-      // Check if script is loading
-      let attempts = 0;
-      const maxAttempts = 100; // 10 seconds
-      
-      const checkGoogle = setInterval(() => {
-        attempts++;
-        if (window.google && window.google.accounts && window.google.accounts.id) {
-          clearInterval(checkGoogle);
-          console.log('✅ Google script loaded after', attempts * 100, 'ms');
-          initGoogleSignIn();
-        } else if (attempts >= maxAttempts) {
-          clearInterval(checkGoogle);
-          console.error('❌ Google script failed to load after 10 seconds. Check network tab.');
-        }
-      }, 100);
-    }
-  }, []);
-
-  const handleGoogleSignIn = async (response) => {
+  // Stable callback for Google Sign-In
+  const handleGoogleSignIn = useCallback(async (response) => {
     setGoogleLoading(true);
     setError('');
     
@@ -123,7 +55,172 @@ const Login = () => {
     } finally {
       setGoogleLoading(false);
     }
-  };
+  }, [googleSignIn, navigate]);
+
+  // Initialize Google Sign-In - Robust version that persists across re-renders
+  useEffect(() => {
+    const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+    
+    if (!googleClientId) {
+      console.error('❌ REACT_APP_GOOGLE_CLIENT_ID is not set! Restart the frontend server after creating .env.local');
+      return;
+    }
+    
+    let checkInterval = null;
+    let initTimeout = null;
+    let retryTimeout = null;
+    
+    const initGoogleSignIn = () => {
+      // Check if button container exists
+      if (!googleButtonRef.current) {
+        console.warn('⚠️ Google button container not ready yet');
+        return false;
+      }
+      
+      // Check if button is already rendered (Google adds iframe)
+      const hasButton = googleButtonRef.current.querySelector('iframe') || 
+                        googleButtonRef.current.hasAttribute('data-google-initialized');
+      
+      if (hasButton && googleInitializedRef.current) {
+        console.log('✅ Google button already rendered, skipping re-initialization');
+        return true;
+      }
+      
+      if (window.google && window.google.accounts && window.google.accounts.id && googleClientId) {
+        try {
+          // Clear any existing content
+          if (googleButtonRef.current) {
+            googleButtonRef.current.innerHTML = '';
+          }
+          
+          // Mark as initialized
+          if (googleButtonRef.current) {
+            googleButtonRef.current.setAttribute('data-google-initialized', 'true');
+          }
+          googleInitializedRef.current = true;
+          
+          console.log('✅ Initializing Google Sign-In button...');
+          
+          // Initialize Google Sign-In (only once globally)
+          if (!window.googleSignInInitialized) {
+            window.google.accounts.id.initialize({
+              client_id: googleClientId,
+              callback: handleGoogleSignIn,
+            });
+            window.googleSignInInitialized = true;
+          }
+
+          // Render the button
+          window.google.accounts.id.renderButton(
+            googleButtonRef.current,
+            {
+              theme: 'outline',
+              size: 'large',
+              width: '100%',
+              text: 'signin_with',
+              locale: 'en'
+            }
+          );
+          
+          console.log('✅ Google Sign-In button rendered successfully');
+          return true;
+        } catch (error) {
+          console.error('❌ Error initializing Google Sign-In:', error);
+          // Remove the flag so we can retry
+          if (googleButtonRef.current) {
+            googleButtonRef.current.removeAttribute('data-google-initialized');
+          }
+          googleInitializedRef.current = false;
+          return false;
+        }
+      }
+      
+      return false;
+    };
+
+    // Function to retry initialization if container becomes available
+    const retryInit = () => {
+      if (googleButtonRef.current && window.google && window.google.accounts && window.google.accounts.id) {
+        if (!googleInitializedRef.current) {
+          initGoogleSignIn();
+        }
+      }
+    };
+
+    // Try to initialize immediately if Google script is ready
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      // Small delay to ensure DOM is ready
+      initTimeout = setTimeout(() => {
+        initGoogleSignIn();
+      }, 100);
+      
+      // Also retry after a longer delay in case DOM wasn't ready
+      retryTimeout = setTimeout(() => {
+        retryInit();
+      }, 500);
+    } else {
+      // Wait for Google script to load
+      let attempts = 0;
+      const maxAttempts = 100; // 10 seconds
+      
+      checkInterval = setInterval(() => {
+        attempts++;
+        if (window.google && window.google.accounts && window.google.accounts.id) {
+          clearInterval(checkInterval);
+          console.log('✅ Google script loaded after', attempts * 100, 'ms');
+          // Small delay to ensure DOM is ready
+          initTimeout = setTimeout(() => {
+            initGoogleSignIn();
+          }, 100);
+          
+          // Also retry after a longer delay
+          retryTimeout = setTimeout(() => {
+            retryInit();
+          }, 500);
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          console.error('❌ Google script failed to load after 10 seconds. Check network tab.');
+        }
+      }, 100);
+    }
+    
+    // Observe button container changes to re-initialize if needed
+    const observer = new MutationObserver(() => {
+      retryInit();
+    });
+    
+    if (googleButtonRef.current) {
+      observer.observe(googleButtonRef.current, { 
+        childList: true, 
+        subtree: true,
+        attributes: true 
+      });
+    }
+    
+    // Also check periodically if button disappeared
+    const periodicCheck = setInterval(() => {
+      if (googleButtonRef.current && !googleButtonRef.current.querySelector('iframe') && !googleInitializedRef.current) {
+        retryInit();
+      }
+    }, 1000);
+    
+    // Cleanup function
+    return () => {
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
+      if (initTimeout) {
+        clearTimeout(initTimeout);
+      }
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
+      if (periodicCheck) {
+        clearInterval(periodicCheck);
+      }
+      observer.disconnect();
+    };
+  }, [handleGoogleSignIn]); // Include handleGoogleSignIn in dependencies
 
   const handleSubmit = async (e) => {
     e.preventDefault();

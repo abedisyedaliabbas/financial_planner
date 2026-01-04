@@ -521,33 +521,38 @@ const CreditCards = () => {
                 </div>
                 <div className="form-group">
                   <label>Bank Name</label>
-                  {cardFormData.country && BANKS_BY_COUNTRY[cardFormData.country] ? (
-                    <>
-                      <input
-                        type="text"
-                        list={`bank-list-${cardFormData.country}`}
-                        value={cardFormData.bank_name}
-                        onChange={(e) => setCardFormData({ ...cardFormData, bank_name: e.target.value })}
-                        placeholder="Select from list or type custom bank name"
-                        style={{ width: '100%' }}
-                      />
-                      <datalist id={`bank-list-${cardFormData.country}`}>
+                  <input
+                    type="text"
+                    list={`bank-list-card-${cardFormData.country || 'default'}`}
+                    value={cardFormData.bank_name}
+                    onChange={(e) => setCardFormData({ ...cardFormData, bank_name: e.target.value })}
+                    placeholder={cardFormData.country ? "Select from list or type custom bank name" : "Enter bank name"}
+                    style={{ width: '100%' }}
+                  />
+                  <datalist id={`bank-list-card-${cardFormData.country || 'default'}`}>
+                    {cardFormData.country && BANKS_BY_COUNTRY[cardFormData.country] ? (
+                      <>
                         {BANKS_BY_COUNTRY[cardFormData.country].map(bank => (
                           <option key={bank} value={bank} />
                         ))}
-                      </datalist>
-                      <small style={{ display: 'block', marginTop: '5px', color: '#666', fontSize: '12px' }}>
-                        Select from suggestions or type any bank name
-                      </small>
-                    </>
-                  ) : (
-                    <input
-                      type="text"
-                      value={cardFormData.bank_name}
-                      onChange={(e) => setCardFormData({ ...cardFormData, bank_name: e.target.value })}
-                      placeholder="Enter bank name"
-                    />
-                  )}
+                        <option value="Other (Enter custom bank name)" />
+                      </>
+                    ) : (
+                      <>
+                        {Object.values(BANKS_BY_COUNTRY).flat().filter((bank, index, self) => 
+                          self.indexOf(bank) === index
+                        ).slice(0, 20).map(bank => (
+                          <option key={bank} value={bank} />
+                        ))}
+                        <option value="Other (Enter custom bank name)" />
+                      </>
+                    )}
+                  </datalist>
+                  <small style={{ display: 'block', marginTop: '5px', color: '#666', fontSize: '12px' }}>
+                    {cardFormData.country 
+                      ? `Select from ${BANKS_BY_COUNTRY[cardFormData.country]?.length || 0} suggested banks for ${cardFormData.country} or type any bank name`
+                      : "Select a country to see bank suggestions, or type any bank name"}
+                  </small>
                 </div>
               </div>
               <div className="form-row">

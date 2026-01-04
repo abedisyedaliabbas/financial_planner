@@ -815,9 +815,22 @@ router.post('/debit-cards', async (req, res) => {
       return res.status(404).json({ error: 'Bank account not found' });
     }
     
-    // Check if bank account already has 5 debit cards
+    // Check subscription limit for total debit cards
+    const limitCheck = await checkLimit(userId, 'debit_cards');
+    if (!limitCheck.allowed) {
+      return res.status(403).json({
+        error: 'Limit reached',
+        message: `You've reached your free tier limit of ${limitCheck.limit} debit card(s). Upgrade to Premium for unlimited cards.`,
+        current: limitCheck.current,
+        limit: limitCheck.limit,
+        upgradeUrl: '/upgrade'
+      });
+    }
+    
+    // Check if bank account already has 5 debit cards (per-account limit)
     const existingCards = await db.query('SELECT COUNT(*) as count FROM debit_cards WHERE bank_account_id = ? AND user_id = ?', [bank_account_id, userId]);
-    if (existingCards[0].count >= 5) {
+    const accountCardCount = Number(existingCards[0]?.count) || 0;
+    if (accountCardCount >= 5) {
       return res.status(400).json({ error: 'Maximum 5 debit cards allowed per bank account' });
     }
     

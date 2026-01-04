@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { loansAPI, bankAccountsAPI } from '../services/api';
 import { FaPlus, FaEdit, FaTrash, FaExchangeAlt, FaBell, FaChartLine } from 'react-icons/fa';
-import { COUNTRIES, CURRENCIES } from '../utils/banksData';
+import { COUNTRIES, BANKS_BY_COUNTRY, CURRENCIES } from '../utils/banksData';
 import { convertCurrency, getAllCurrencies, getCurrencyName } from '../utils/currencyConverter';
 import './FinancialPages.css';
 
@@ -417,13 +417,42 @@ const Loans = () => {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Lender</label>
+                  <label>Lender (Bank Name)</label>
                   <input
                     type="text"
+                    list={`bank-list-loan-${formData.country || 'default'}`}
                     value={formData.lender}
                     onChange={(e) => setFormData({ ...formData, lender: e.target.value })}
-                    placeholder="e.g., Bank Name, Credit Union"
+                    placeholder={formData.country ? "Select from list or type custom bank name" : "e.g., Bank Name, Credit Union"}
                   />
+                  <datalist id={`bank-list-loan-${formData.country || 'default'}`}>
+                    {formData.country && BANKS_BY_COUNTRY[formData.country] ? (
+                      <>
+                        {BANKS_BY_COUNTRY[formData.country].map(bank => (
+                          <option key={bank} value={bank} />
+                        ))}
+                        <option value="Other (Enter custom bank name)" />
+                        <option value="Credit Union" />
+                        <option value="Private Lender" />
+                      </>
+                    ) : (
+                      <>
+                        {Object.values(BANKS_BY_COUNTRY).flat().filter((bank, index, self) => 
+                          self.indexOf(bank) === index
+                        ).slice(0, 20).map(bank => (
+                          <option key={bank} value={bank} />
+                        ))}
+                        <option value="Other (Enter custom bank name)" />
+                        <option value="Credit Union" />
+                        <option value="Private Lender" />
+                      </>
+                    )}
+                  </datalist>
+                  <small style={{ display: 'block', marginTop: '5px', color: '#666', fontSize: '12px' }}>
+                    {formData.country 
+                      ? `Select from ${BANKS_BY_COUNTRY[formData.country]?.length || 0} suggested banks for ${formData.country} or type any lender name`
+                      : "Select a country to see bank suggestions, or type any lender name"}
+                  </small>
                 </div>
                 <div className="form-group">
                   <label>Country</label>

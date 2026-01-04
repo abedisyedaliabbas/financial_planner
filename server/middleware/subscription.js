@@ -5,6 +5,7 @@ const TIER_LIMITS = {
   free: {
     bank_accounts: 2,
     credit_cards: 2,
+    debit_cards: 2,
     expenses_per_month: 50,
     income_per_month: 5,
     goals: 1,
@@ -15,6 +16,7 @@ const TIER_LIMITS = {
   premium: {
     bank_accounts: Infinity,
     credit_cards: Infinity,
+    debit_cards: Infinity,
     expenses_per_month: Infinity,
     income_per_month: Infinity,
     goals: Infinity,
@@ -87,15 +89,24 @@ const checkLimit = async (userId, resourceType) => {
     switch (resourceType) {
       case 'bank_accounts':
         const accounts = await db.query('SELECT COUNT(*) as count FROM bank_accounts WHERE user_id = ?', [userId]);
-        // SQLite COUNT returns as object with count property (may be string or number)
-        current = Number(accounts[0]?.count) || 0;
-        console.log('Bank accounts count check:', { userId, accounts, current, limit });
+        // Ensure count is always a number - handle both SQLite and Turso result formats
+        const accountCount = accounts && accounts.length > 0 ? accounts[0] : null;
+        current = accountCount ? (Number(accountCount.count) || Number(accountCount) || 0) : 0;
+        console.log('Bank accounts count check:', { userId, rawResult: accounts, extractedCount: current, limit });
         break;
         
       case 'credit_cards':
         const cards = await db.query('SELECT COUNT(*) as count FROM credit_cards WHERE user_id = ?', [userId]);
-        current = Number(cards[0]?.count) || 0;
-        console.log('Credit cards count check:', { userId, cards, current, limit });
+        const cardCount = cards && cards.length > 0 ? cards[0] : null;
+        current = cardCount ? (Number(cardCount.count) || Number(cardCount) || 0) : 0;
+        console.log('Credit cards count check:', { userId, rawResult: cards, extractedCount: current, limit });
+        break;
+        
+      case 'debit_cards':
+        const debitCards = await db.query('SELECT COUNT(*) as count FROM debit_cards WHERE user_id = ?', [userId]);
+        const debitCardCount = debitCards && debitCards.length > 0 ? debitCards[0] : null;
+        current = debitCardCount ? (Number(debitCardCount.count) || Number(debitCardCount) || 0) : 0;
+        console.log('Debit cards count check:', { userId, rawResult: debitCards, extractedCount: current, limit });
         break;
         
       case 'expenses_per_month':
