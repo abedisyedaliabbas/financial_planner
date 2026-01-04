@@ -361,9 +361,23 @@ router.post('/income', async (req, res) => {
       });
     }
 
+    // Convert and sanitize values
+    const sanitizedAmount = parseFloat(amount) || 0;
+    const sanitizedBankAccountId = bank_account_id && bank_account_id !== '' ? parseInt(bank_account_id) : null;
+
     const result = await db.run(
       'INSERT INTO income (user_id, amount, currency, income_type, frequency, bank_account_id, description, date, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, amount, currency || 'USD', income_type || null, frequency || null, bank_account_id || null, description || null, date || new Date().toISOString().split('T')[0], source || null]
+      [
+        userId, 
+        sanitizedAmount, 
+        currency || 'USD', 
+        income_type ? income_type.trim() : null, 
+        frequency ? frequency.trim() : null, 
+        sanitizedBankAccountId, 
+        description ? description.trim() : null, 
+        date || new Date().toISOString().split('T')[0], 
+        source ? source.trim() : null
+      ]
     );
     res.json({ id: result.id, message: 'Income added successfully' });
   } catch (error) {
