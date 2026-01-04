@@ -38,8 +38,14 @@ const Login = () => {
       hasClientId: !!googleClientId,
       clientId: googleClientId ? googleClientId.substring(0, 20) + '...' : 'NOT SET',
       hasGoogleScript: typeof window.google !== 'undefined',
-      hasButtonRef: !!googleButtonRef.current
+      hasButtonRef: !!googleButtonRef.current,
+      envVar: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET'
     });
+    
+    if (!googleClientId) {
+      console.error('❌ REACT_APP_GOOGLE_CLIENT_ID is not set! Restart the frontend server after creating .env.local');
+      return;
+    }
     
     const initGoogleSignIn = () => {
       if (window.google && googleButtonRef.current && googleClientId) {
@@ -74,19 +80,24 @@ const Login = () => {
     };
 
     // Wait for Google script to load
-    if (window.google) {
+    if (window.google && window.google.accounts) {
       initGoogleSignIn();
     } else {
+      // Check if script is loading
+      let attempts = 0;
+      const maxAttempts = 100; // 10 seconds
+      
       const checkGoogle = setInterval(() => {
-        if (window.google) {
+        attempts++;
+        if (window.google && window.google.accounts && window.google.accounts.id) {
           clearInterval(checkGoogle);
+          console.log('✅ Google script loaded after', attempts * 100, 'ms');
           initGoogleSignIn();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkGoogle);
+          console.error('❌ Google script failed to load after 10 seconds. Check network tab.');
         }
       }, 100);
-
-      setTimeout(() => {
-        clearInterval(checkGoogle);
-      }, 10000);
     }
   }, []);
 
@@ -347,29 +358,31 @@ const Login = () => {
             <span>OR</span>
           </div>
           
-          <div 
-            ref={googleButtonRef}
-            id="google-signin-button"
-            style={{ 
-              width: '100%', 
-              display: 'flex', 
-              justifyContent: 'center',
-              marginBottom: '20px',
-              minHeight: '40px',
-              opacity: googleLoading ? 0.6 : 1,
-              pointerEvents: googleLoading ? 'none' : 'auto'
-            }}
-          />
-          
-          {!process.env.REACT_APP_GOOGLE_CLIENT_ID && (
+          {process.env.REACT_APP_GOOGLE_CLIENT_ID ? (
+            <div 
+              ref={googleButtonRef}
+              id="google-signin-button"
+              style={{ 
+                width: '100%', 
+                display: 'flex', 
+                justifyContent: 'center',
+                marginBottom: '20px',
+                minHeight: '40px',
+                opacity: googleLoading ? 0.6 : 1,
+                pointerEvents: googleLoading ? 'none' : 'auto'
+              }}
+            />
+          ) : (
             <div style={{ 
               textAlign: 'center', 
               padding: '10px', 
               color: '#666', 
               fontSize: '13px',
-              marginBottom: '20px'
+              marginBottom: '20px',
+              backgroundColor: '#f5f5f5',
+              borderRadius: '8px'
             }}>
-              Google Sign-In not configured
+              ⚠️ Google Sign-In not configured. Restart frontend server after setting REACT_APP_GOOGLE_CLIENT_ID in .env.local
             </div>
           )}
           
