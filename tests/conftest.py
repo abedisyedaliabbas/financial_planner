@@ -58,15 +58,17 @@ def create_chrome_driver():
     else:
         print(f"ChromeDriver not found at {CHROME_DRIVER_PATH}, trying ChromeDriverManager...")
         try:
-            service = ChromeService(ChromeDriverManager().install())
+            # Try to get latest ChromeDriver version
+            driver_path = ChromeDriverManager().install()
+            service = ChromeService(driver_path)
         except Exception as e:
-            print(f"Warning: ChromeDriverManager failed: {e}")
-            print("Attempting to use latest version...")
-            try:
-                service = ChromeService(ChromeDriverManager(version="latest").install())
-            except Exception as e2:
-                print(f"Error: Could not install ChromeDriver: {e2}")
-                raise
+            print(f"Error: ChromeDriverManager failed: {e}")
+            print("\nTroubleshooting:")
+            print("  1. Ensure Chrome browser is installed")
+            print("  2. Or download ChromeDriver manually from: https://chromedriver.chromium.org/")
+            print("  3. Extract to: C:\\chromedriver\\chromedriver.exe")
+            print("  4. Or try using Edge browser instead (set TEST_BROWSER=edge in .env)")
+            raise
     
     return webdriver.Chrome(service=service, options=chrome_options)
 
