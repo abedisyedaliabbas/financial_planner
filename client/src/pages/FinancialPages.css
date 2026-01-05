@@ -2,11 +2,19 @@
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
+  overflow-x: visible !important; /* Allow table-wrapper to scroll */
 }
 
 @media (max-width: 768px) {
   .page-container {
     padding: 15px 10px;
+    overflow-x: visible !important; /* Allow table-wrapper to scroll */
+  }
+  
+  /* Ensure card containers don't hide tables */
+  .card {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
   }
 }
 
