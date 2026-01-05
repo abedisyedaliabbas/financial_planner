@@ -121,53 +121,10 @@ select {
     white-space: nowrap;
   }
 
-  /* Alternative: Card-based table for very small screens */
-  .table-mobile-card {
-    display: none;
-  }
-
-  @media (max-width: 480px) {
-    .table {
-      display: none;
-    }
-
-    .table-mobile-card {
-      display: block;
-    }
-
-    .mobile-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 15px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 4px var(--shadow);
-    }
-
-    .mobile-card-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .mobile-card-row:last-child {
-      border-bottom: none;
-    }
-
-    .mobile-card-label {
-      font-weight: 600;
-      color: var(--text-secondary);
-      font-size: 12px;
-    }
-
-    .mobile-card-value {
-      color: var(--text-primary);
-      font-size: 14px;
-      text-align: right;
-      flex: 1;
-      margin-left: 15px;
-    }
+  /* Tables are now scrollable with table-wrapper, so we don't hide them */
+  /* Keep tables visible and scrollable on all screen sizes */
+  .table-wrapper .table {
+    display: table !important;
   }
 
   /* Modal optimizations for mobile */
