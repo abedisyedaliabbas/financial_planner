@@ -236,78 +236,80 @@ const Expenses = () => {
             </small>
           </div>
         ) : (
-          <table className="table" style={{ fontSize: '13px' }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Date</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Category</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Description</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Amount</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Payment Method</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Card</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((expense) => (
-                <tr key={expense.id}>
-                  <td style={{ padding: '10px' }}>{new Date(expense.date).toLocaleDateString()}</td>
-                  <td style={{ padding: '10px' }}>
-                    <span style={{ 
-                      padding: '4px 8px', 
-                      borderRadius: '4px', 
-                      background: '#e0f2fe', 
-                      color: '#0369a1', 
-                      fontSize: '11px', 
-                      fontWeight: '600' 
-                    }}>
-                      {expense.category}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px' }}>{expense.description || '-'}</td>
-                  <td style={{ padding: '10px', fontWeight: '600', color: '#ef4444' }}>
-                    {formatCurrency(expense.amount, expense.currency)}
-                    {expense.currency && expense.currency !== displayCurrency && (
-                      <div style={{ fontSize: '11px', color: '#999', marginTop: '2px', fontWeight: '400' }}>
-                        {expense.currency} {formatCurrencyUtil(expense.amount, expense.currency)}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px' }}>
-                    <span style={{ fontSize: '12px', textTransform: 'capitalize' }}>{expense.payment_method}</span>
-                  </td>
-                  <td style={{ padding: '10px', fontSize: '12px' }}>{expense.card_name || '-'}</td>
-                  <td style={{ padding: '10px' }}>
-                    <button
-                      className="btn"
-                      onClick={() => handleEdit(expense)}
-                      style={{ padding: '4px 8px', fontSize: '12px', marginRight: '5px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(expense.id)}
-                      style={{ padding: '4px 8px', fontSize: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
+          <div className="table-wrapper" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table className="table" style={{ fontSize: '13px', width: '100%', minWidth: '600px' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Date</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Category</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Description</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Amount</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Payment Method</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Card</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Actions</th>
                 </tr>
-              ))}
-              {expenses.length > 0 && (
-                <tr style={{ background: '#f3f4f6', fontWeight: 'bold', borderTop: '2px solid #ef4444' }}>
-                  <td colSpan="3" style={{ textAlign: 'right', padding: '12px', fontSize: '13px' }}>
-                    <strong>TOTAL:</strong>
-                  </td>
-                  <td style={{ padding: '12px', color: '#ef4444', fontSize: '18px', fontWeight: '700' }}>
-                    {formatCurrencyUtil(totalExpenses, displayCurrency)}
-                  </td>
-                  <td colSpan="3" style={{ padding: '12px' }}></td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {expenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td style={{ padding: '10px' }}>{new Date(expense.date).toLocaleDateString()}</td>
+                    <td style={{ padding: '10px' }}>
+                      <span style={{ 
+                        padding: '4px 8px', 
+                        borderRadius: '4px', 
+                        background: '#e0f2fe', 
+                        color: '#0369a1', 
+                        fontSize: '11px', 
+                        fontWeight: '600' 
+                      }}>
+                        {expense.category}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px' }}>{expense.description || '-'}</td>
+                    <td style={{ padding: '10px', fontWeight: '600', color: '#ef4444' }}>
+                      {formatCurrency(expense.amount, expense.currency)}
+                      {expense.currency && expense.currency !== displayCurrency && (
+                        <div style={{ fontSize: '11px', color: '#999', marginTop: '2px', fontWeight: '400' }}>
+                          {expense.currency} {formatCurrencyUtil(expense.amount, expense.currency)}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px' }}>
+                      <span style={{ fontSize: '12px', textTransform: 'capitalize' }}>{expense.payment_method}</span>
+                    </td>
+                    <td style={{ padding: '10px', fontSize: '12px' }}>{expense.card_name || '-'}</td>
+                    <td style={{ padding: '10px' }}>
+                      <button
+                        className="btn"
+                        onClick={() => handleEdit(expense)}
+                        style={{ padding: '4px 8px', fontSize: '12px', marginRight: '5px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDelete(expense.id)}
+                        style={{ padding: '4px 8px', fontSize: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {expenses.length > 0 && (
+                  <tr style={{ background: '#f3f4f6', fontWeight: 'bold', borderTop: '2px solid #ef4444' }}>
+                    <td colSpan="3" style={{ textAlign: 'right', padding: '12px', fontSize: '13px' }}>
+                      <strong>TOTAL:</strong>
+                    </td>
+                    <td style={{ padding: '12px', color: '#ef4444', fontSize: '18px', fontWeight: '700' }}>
+                      {formatCurrencyUtil(totalExpenses, displayCurrency)}
+                    </td>
+                    <td colSpan="3" style={{ padding: '12px' }}></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

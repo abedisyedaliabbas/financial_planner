@@ -200,6 +200,38 @@
   gap: 15px;
 }
 
+/* Default web styles for summary cards */
+.summary-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  padding: 15px;
+  color: white;
+}
+
+.summary-card h3 {
+  margin: 0 0 8px 0;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.summary-value {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.summary-subtitle {
+  font-size: 11px;
+  margin-top: 4px;
+  opacity: 0.9;
+}
+
 @media (max-width: 768px) {
   .form-row {
     grid-template-columns: 1fr;
