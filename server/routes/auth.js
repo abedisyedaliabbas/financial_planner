@@ -39,18 +39,52 @@ router.post('/register', async (req, res) => {
     // Normalize email (lowercase, trim)
     const normalizedEmail = email.toLowerCase().trim();
     
-    // Check if user already exists (application level check)
-    const existingUsers = await db.query('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
-    if (existingUsers && existingUsers.length > 0) {
-      return res.status(400).json({ 
-        error: 'Email already registered',
-        message: 'This email address is already in use. Please use a different email or try logging in instead.'
+    // Check if user already exists (application level check) - do this FIRST before any other operations
+    let existingUsers;
+    try {
+      existingUsers = await db.query('SELECT id, email_verified FROM users WHERE email = ?', [normalizedEmail]);
+    } catch (checkError) {
+      console.error('❌ Error checking for existing user:', checkError);
+      return res.status(500).json({ 
+        error: 'Database error',
+        message: 'Unable to check if email is already registered. Please try again.'
       });
+    }
+    
+    if (existingUsers && existingUsers.length > 0) {
+      const existingUser = existingUsers[0];
+      const isVerified = existingUser.email_verified === 1 || existingUser.email_verified === true;
+      
+      if (isVerified) {
+        return res.status(400).json({ 
+          error: 'Email already registered',
+          message: 'This email address is already registered and verified. Please log in instead.',
+          alreadyRegistered: true
+        });
+      } else {
+        // User exists but email not verified - allow resending verification
+        return res.status(400).json({ 
+          error: 'Email already registered',
+          message: 'This email address is already registered but not verified. Please check your email or use "Resend Verification" on the login page.',
+          alreadyRegistered: true,
+          requiresVerification: true,
+          email: normalizedEmail
+        });
+      }
     }
 
     // Hash password
     const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+    let passwordHash;
+    try {
+      passwordHash = await bcrypt.hash(password, saltRounds);
+    } catch (hashError) {
+      console.error('❌ Error hashing password:', hashError);
+      return res.status(500).json({ 
+        error: 'Password encryption error',
+        message: 'Unable to process password. Please try again.'
+      });
+    }
 
     // Create user (default to free tier, email NOT verified yet)
     // Database has UNIQUE constraint on email, so this will fail if email exists
@@ -75,15 +109,40 @@ router.post('/register', async (req, res) => {
       console.log(`✓ Verified user exists in database: ${verifyUser[0].email} (ID: ${verifyUser[0].id})`);
     } catch (dbError) {
       console.error('❌ Database error during registration:', dbError);
+      console.error('   Error code:', dbError.code);
+      console.error('   Error message:', dbError.message);
+      
       // Handle database constraint violation (email already exists)
-      if (dbError.code === 'SQLITE_CONSTRAINT' || dbError.message.includes('UNIQUE constraint') || dbError.message.includes('UNIQUE')) {
-        console.log(`⚠️  Email already exists: ${normalizedEmail}`);
+      if (dbError.code === 'SQLITE_CONSTRAINT' || 
+          dbError.code === '23505' || // PostgreSQL unique violation
+          dbError.message?.includes('UNIQUE constraint') || 
+          dbError.message?.includes('UNIQUE') ||
+          dbError.message?.includes('duplicate key')) {
+        console.log(`⚠️  Email already exists (caught by DB constraint): ${normalizedEmail}`);
+        
+        // Check if user exists and is verified
+        const checkUser = await db.query('SELECT id, email_verified FROM users WHERE email = ?', [normalizedEmail]);
+        if (checkUser && checkUser.length > 0) {
+          const isVerified = checkUser[0].email_verified === 1 || checkUser[0].email_verified === true;
+          return res.status(400).json({ 
+            error: 'Email already registered',
+            message: isVerified 
+              ? 'This email address is already registered and verified. Please log in instead.'
+              : 'This email address is already registered but not verified. Please check your email or use "Resend Verification" on the login page.',
+            alreadyRegistered: true,
+            requiresVerification: !isVerified
+          });
+        }
+        
         return res.status(400).json({ 
           error: 'Email already registered',
-          message: 'This email address is already in use. Please use a different email or try logging in instead.'
+          message: 'This email address is already in use. Please use a different email or try logging in instead.',
+          alreadyRegistered: true
         });
       }
-      throw dbError; // Re-throw if it's a different error
+      
+      // Re-throw if it's a different error
+      throw dbError;
     }
 
     // Generate token
@@ -127,20 +186,31 @@ router.post('/register', async (req, res) => {
       console.log(`   FRONTEND_URL env var: ${process.env.FRONTEND_URL || 'NOT SET (using localhost fallback)'}`);
       console.log(`   Using frontend URL: ${frontendUrl}`);
       console.log(`   Verification link: ${verificationLink}`);
+      console.log(`   Recipient: ${normalizedEmail}`);
       
       // Try to send verification email, but don't fail registration if it fails
       let emailResult = { sent: false, error: 'Unknown error' };
       try {
+        console.log(`📧 Attempting to send verification email to ${normalizedEmail}...`);
         emailResult = await sendEmailVerification(normalizedEmail, verificationLink, name || normalizedEmail.split('@')[0]);
         
         if (!emailResult.sent) {
-          console.error(`❌ Verification email failed to send to ${normalizedEmail}`);
+          console.error(`❌ Verification email FAILED to send to ${normalizedEmail}`);
           console.error(`   Error: ${emailResult.error}`);
+          console.error(`   This may be due to:`);
+          console.error(`   - Email service not configured (check SMTP_USER/SMTP_PASS or RESEND_API_KEY)`);
+          console.error(`   - Email service connection issues`);
+          console.error(`   - Email provider blocking the email`);
+          console.error(`   User can use "Resend Verification" on login page`);
         } else {
-          console.log(`✅ Verification email sent to ${normalizedEmail}`);
+          console.log(`✅ Verification email sent successfully to ${normalizedEmail}`);
+          if (emailResult.messageId) {
+            console.log(`   Message ID: ${emailResult.messageId}`);
+          }
         }
       } catch (emailError) {
-        console.error(`❌ Exception while sending verification email to ${normalizedEmail}:`, emailError);
+        console.error(`❌ EXCEPTION while sending verification email to ${normalizedEmail}:`, emailError);
+        console.error(`   Error message: ${emailError.message}`);
         console.error(`   Error stack:`, emailError.stack);
         emailResult = { sent: false, error: emailError.message || 'Exception sending email' };
       }
@@ -281,10 +351,18 @@ router.post('/login', async (req, res) => {
         .then(result => {
           if (result.sent) {
             console.log(`✅ Verification email resent to ${user.email}`);
+            if (result.messageId) {
+              console.log(`   Message ID: ${result.messageId}`);
+            }
+          } else {
+            console.error(`❌ Failed to resend verification email to ${user.email}`);
+            console.error(`   Error: ${result.error}`);
           }
         })
         .catch(err => {
-          console.error(`❌ Error resending verification email:`, err);
+          console.error(`❌ EXCEPTION while resending verification email to ${user.email}:`, err);
+          console.error(`   Error message: ${err.message}`);
+          console.error(`   Error stack:`, err.stack);
         });
       
       return res.status(403).json({ 
