@@ -19,7 +19,7 @@ def run_tests():
     test_dir = os.path.dirname(os.path.abspath(__file__))
     html_report = os.path.join(test_dir, f"test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html")
     
-    # Run pytest with options
+    # Run pytest with options - FULL TEST RUN (no stopping on failures)
     pytest_args = [
         "pytest",
         "-v",  # Verbose
@@ -27,10 +27,10 @@ def run_tests():
         f"--html={html_report}",  # HTML report
         "--self-contained-html",  # Self-contained HTML
         f"--junitxml={os.path.join(test_dir, 'junit.xml')}",  # JUnit XML for CI/CD
-        "-x",  # Stop on first failure (remove for full run)
-        "--maxfail=5",  # Maximum failures before stopping
+        # Removed -x flag to run ALL tests regardless of failures
         "--timeout=300",  # 5 minute timeout per test
         "--durations=10",  # Show 10 slowest tests
+        "-ra",  # Show extra test summary info for all tests
         test_dir
     ]
     
