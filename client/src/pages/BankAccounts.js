@@ -119,11 +119,15 @@ const BankAccounts = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this bank account?')) {
       try {
-        await bankAccountsAPI.delete(id);
+        // Ensure ID is converted to number (handles BigInt from database)
+        const accountId = typeof id === 'bigint' ? Number(id) : Number(id);
+        await bankAccountsAPI.delete(accountId);
         fetchData();
       } catch (error) {
         console.error('Error deleting bank account:', error);
-        alert('Error deleting bank account');
+        console.error('Error response:', error.response?.data);
+        const errorMessage = error.response?.data?.error || error.response?.data?.message || error.message || 'Error deleting bank account';
+        alert(`Error: ${errorMessage}`);
       }
     }
   };
@@ -578,9 +582,17 @@ const BankAccounts = () => {
                   <label>Current Balance</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
                     value={formData.current_balance}
-                    onChange={(e) => setFormData({ ...formData, current_balance: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Only allow numbers, decimal point, and negative sign
+                      if (value === '' || /^-?\d*\.?\d*$/.test(value)) {
+                        setFormData({ ...formData, current_balance: value });
+                      }
+                    }}
+                    placeholder="0.00"
                   />
                 </div>
               </div>
@@ -588,9 +600,18 @@ const BankAccounts = () => {
                 <label>Interest Rate (%)</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
+                  min="0"
+                  max="100"
                   value={formData.interest_rate}
-                  onChange={(e) => setFormData({ ...formData, interest_rate: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers and decimal point (no negative for interest rate)
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setFormData({ ...formData, interest_rate: value });
+                    }
+                  }}
                   placeholder="Annual interest rate"
                 />
               </div>

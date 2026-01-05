@@ -1121,9 +1121,10 @@ router.delete('/bank-accounts/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const accountId = parseInt(id);
+    // Convert to number, handling both string and BigInt
+    const accountId = typeof id === 'bigint' ? Number(id) : parseInt(id);
     
-    if (isNaN(accountId)) {
+    if (isNaN(accountId) || accountId <= 0) {
       return res.status(400).json({ error: 'Invalid account ID' });
     }
     
@@ -1133,8 +1134,16 @@ router.delete('/bank-accounts/:id', async (req, res) => {
       return res.status(404).json({ error: 'Bank account not found' });
     }
     
-    // Delete associated debit cards first (if any)
+    // Delete or update related records that reference this bank account
+    // Delete associated debit cards first
     await db.run('DELETE FROM debit_cards WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
+    
+    // Set bank_account_id to NULL in related tables (to avoid foreign key constraint issues)
+    await db.run('UPDATE credit_cards SET bank_account_id = NULL WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
+    await db.run('UPDATE income SET bank_account_id = NULL WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
+    await db.run('UPDATE savings SET bank_account_id = NULL WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
+    await db.run('UPDATE loans SET bank_account_id = NULL WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
+    await db.run('UPDATE bill_reminders SET bank_account_id = NULL WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
     
     // Delete the bank account
     await db.run('DELETE FROM bank_accounts WHERE id = ? AND user_id = ?', [accountId, userId]);
@@ -1143,9 +1152,11 @@ router.delete('/bank-accounts/:id', async (req, res) => {
     res.json({ message: 'Bank account deleted successfully' });
   } catch (error) {
     console.error('Bank account deletion error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Failed to delete bank account',
-      message: error.message 
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 });
