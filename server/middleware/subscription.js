@@ -114,7 +114,9 @@ const checkLimit = async (userId, resourceType) => {
           'SELECT COUNT(*) as count FROM expenses WHERE user_id = ? AND date >= ? AND date <= ?',
           [userId, monthStart, monthEnd]
         );
-        current = Number(expenses[0]?.count) || 0;
+        const expenseCount = expenses && expenses.length > 0 ? expenses[0] : null;
+        current = expenseCount ? (Number(expenseCount.count) || Number(expenseCount) || 0) : 0;
+        console.log('Expenses per month count check:', { userId, monthStart, monthEnd, rawResult: expenses, extractedCount: current, limit });
         break;
         
       case 'income_per_month':
@@ -122,7 +124,9 @@ const checkLimit = async (userId, resourceType) => {
           'SELECT COUNT(*) as count FROM income WHERE user_id = ? AND date >= ? AND date <= ?',
           [userId, monthStart, monthEnd]
         );
-        current = Number(income[0]?.count) || 0;
+        const incomeCount = income && income.length > 0 ? income[0] : null;
+        current = incomeCount ? (Number(incomeCount.count) || Number(incomeCount) || 0) : 0;
+        console.log('Income per month count check:', { userId, monthStart, monthEnd, rawResult: income, extractedCount: current, limit });
         break;
         
       case 'goals':
