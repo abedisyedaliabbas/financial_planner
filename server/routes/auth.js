@@ -347,23 +347,22 @@ router.post('/login', async (req, res) => {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const verificationLink = `${frontendUrl}/verify-email?token=${verificationToken}`;
       
-      sendEmailVerification(user.email, verificationLink, user.name || user.email.split('@')[0])
-        .then(result => {
-          if (result.sent) {
-            console.log(`✅ Verification email resent to ${user.email}`);
-            if (result.messageId) {
-              console.log(`   Message ID: ${result.messageId}`);
-            }
-          } else {
-            console.error(`❌ Failed to resend verification email to ${user.email}`);
-            console.error(`   Error: ${result.error}`);
-          }
-        })
-        .catch(err => {
-          console.error(`❌ EXCEPTION while resending verification email to ${user.email}:`, err);
-          console.error(`   Error message: ${err.message}`);
-          console.error(`   Error stack:`, err.stack);
+      const emailResult = await sendEmailVerification(user.email, verificationLink, user.name || user.email.split('@')[0]);
+      
+      if (!emailResult.sent) {
+        console.error(`❌ Failed to resend verification email to ${user.email}`);
+        console.error(`   Error: ${emailResult.error}`);
+        return res.status(500).json({
+          error: 'Failed to send verification email',
+          message: `We could not send the verification email. Error: ${emailResult.error}. Please check your email service configuration or try again later.`,
+          emailError: emailResult.error
         });
+      }
+      
+      console.log(`✅ Verification email resent to ${user.email}`);
+      if (emailResult.messageId) {
+        console.log(`   Message ID: ${emailResult.messageId}`);
+      }
       
       return res.status(403).json({ 
         error: 'Email not verified',
