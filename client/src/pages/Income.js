@@ -33,8 +33,11 @@ const Income = () => {
         incomeAPI.getAll(),
         bankAccountsAPI.getAll()
       ]);
-      setIncome(incomeRes.data || []);
-      setBankAccounts(accountsRes.data || []);
+      const incomeData = incomeRes.data || [];
+      const accountsData = accountsRes.data || [];
+      console.log('Income data fetched:', incomeData.length, 'entries');
+      setIncome(incomeData);
+      setBankAccounts(accountsData);
     } catch (error) {
       console.error('Error fetching data:', error);
       // Don't clear data on rate limit errors - keep existing data
@@ -64,7 +67,8 @@ const Income = () => {
         date: new Date().toISOString().split('T')[0],
         description: ''
       });
-      fetchData();
+      // Force refresh data after adding/updating
+      await fetchData();
     } catch (error) {
       console.error('Error saving income:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Error saving income';
@@ -256,78 +260,80 @@ const Income = () => {
             </button>
           </div>
         ) : (
-          <table className="table" style={{ fontSize: '13px' }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Date</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Source</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Type</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Amount</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Frequency</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Bank Account</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Description</th>
-                <th style={{ padding: '10px', fontSize: '12px' }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {income.map((item) => (
-                <tr key={item.id}>
-                  <td style={{ padding: '10px' }}>{new Date(item.date).toLocaleDateString()}</td>
-                  <td style={{ padding: '10px' }}><strong>{item.source}</strong></td>
-                  <td style={{ padding: '10px' }}>
-                    <span style={{ 
-                      padding: '4px 8px', 
-                      borderRadius: '4px', 
-                      background: '#dcfce7', 
-                      color: '#166534', 
-                      fontSize: '11px', 
-                      fontWeight: '600' 
-                    }}>
-                      {item.income_type || 'N/A'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px', color: '#10b981', fontWeight: '700', fontSize: '14px' }}>
-                    {formatCurrency(item.amount, item.currency)}
-                    {item.currency && item.currency !== displayCurrency && (
-                      <div style={{ fontSize: '11px', color: '#999', marginTop: '2px', fontWeight: '400' }}>
-                        {item.currency} {formatCurrencyUtil(item.amount, item.currency)}
-                      </div>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px', fontSize: '12px' }}>{item.frequency || 'N/A'}</td>
-                  <td style={{ padding: '10px', fontSize: '12px' }}>{item.bank_account_name ? `${item.bank_account_name} (${item.bank_name})` : '-'}</td>
-                  <td style={{ padding: '10px', fontSize: '12px' }}>{item.description || '-'}</td>
-                  <td style={{ padding: '10px' }}>
-                    <button
-                      className="btn"
-                      onClick={() => handleEdit(item)}
-                      style={{ padding: '4px 8px', fontSize: '12px', marginRight: '5px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => handleDelete(item.id)}
-                      style={{ padding: '4px 8px', fontSize: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
+          <div className="table-wrapper" style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <table className="table" style={{ fontSize: '13px', width: '100%', minWidth: '600px' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Date</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Source</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Type</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Amount</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Frequency</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Bank Account</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Description</th>
+                  <th style={{ padding: '10px', fontSize: '12px' }}>Actions</th>
                 </tr>
-              ))}
-              {income.length > 0 && (
-                <tr style={{ background: '#f3f4f6', fontWeight: 'bold', borderTop: '2px solid #10b981' }}>
-                  <td colSpan="3" style={{ textAlign: 'right', padding: '12px', fontSize: '13px' }}>
-                    <strong>TOTAL:</strong>
-                  </td>
-                  <td style={{ padding: '12px', color: '#10b981', fontSize: '18px', fontWeight: '700' }}>
-                    {formatCurrencyUtil(totalIncome, displayCurrency)}
-                  </td>
-                  <td colSpan="4" style={{ padding: '12px' }}></td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {income.map((item) => (
+                  <tr key={item.id}>
+                    <td style={{ padding: '10px' }}>{new Date(item.date).toLocaleDateString()}</td>
+                    <td style={{ padding: '10px' }}><strong>{item.source}</strong></td>
+                    <td style={{ padding: '10px' }}>
+                      <span style={{ 
+                        padding: '4px 8px', 
+                        borderRadius: '4px', 
+                        background: '#dcfce7', 
+                        color: '#166534', 
+                        fontSize: '11px', 
+                        fontWeight: '600' 
+                      }}>
+                        {item.income_type || 'N/A'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px', color: '#10b981', fontWeight: '700', fontSize: '14px' }}>
+                      {formatCurrency(item.amount, item.currency)}
+                      {item.currency && item.currency !== displayCurrency && (
+                        <div style={{ fontSize: '11px', color: '#999', marginTop: '2px', fontWeight: '400' }}>
+                          {item.currency} {formatCurrencyUtil(item.amount, item.currency)}
+                        </div>
+                      )}
+                    </td>
+                    <td style={{ padding: '10px', fontSize: '12px' }}>{item.frequency || 'N/A'}</td>
+                    <td style={{ padding: '10px', fontSize: '12px' }}>{item.bank_account_name ? `${item.bank_account_name} (${item.bank_name})` : '-'}</td>
+                    <td style={{ padding: '10px', fontSize: '12px' }}>{item.description || '-'}</td>
+                    <td style={{ padding: '10px' }}>
+                      <button
+                        className="btn"
+                        onClick={() => handleEdit(item)}
+                        style={{ padding: '4px 8px', fontSize: '12px', marginRight: '5px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDelete(item.id)}
+                        style={{ padding: '4px 8px', fontSize: '12px', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {income.length > 0 && (
+                  <tr style={{ background: '#f3f4f6', fontWeight: 'bold', borderTop: '2px solid #10b981' }}>
+                    <td colSpan="3" style={{ textAlign: 'right', padding: '12px', fontSize: '13px' }}>
+                      <strong>TOTAL:</strong>
+                    </td>
+                    <td style={{ padding: '12px', color: '#10b981', fontSize: '18px', fontWeight: '700' }}>
+                      {formatCurrencyUtil(totalIncome, displayCurrency)}
+                    </td>
+                    <td colSpan="4" style={{ padding: '12px' }}></td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
