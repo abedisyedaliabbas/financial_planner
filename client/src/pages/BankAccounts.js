@@ -701,9 +701,17 @@ const BankAccounts = () => {
                 <label>Daily Limit (Optional)</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   step="0.01"
+                  min="0"
                   value={cardFormData.daily_limit}
-                  onChange={(e) => setCardFormData({ ...cardFormData, daily_limit: e.target.value })}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Only allow numbers and decimal point
+                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                      setCardFormData({ ...cardFormData, daily_limit: value });
+                    }
+                  }}
                   placeholder="e.g., 1000"
                 />
               </div>
