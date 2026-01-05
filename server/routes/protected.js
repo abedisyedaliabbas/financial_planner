@@ -1658,12 +1658,25 @@ router.delete('/installments/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM installments WHERE id = ? AND user_id = ?', [id, userId]);
+    const installmentId = parseInt(id);
+    
+    if (isNaN(installmentId)) {
+      return res.status(400).json({ error: 'Invalid installment ID' });
+    }
+    
+    // Check if installment exists and belongs to user
+    const installment = await db.query('SELECT id FROM installments WHERE id = ? AND user_id = ?', [installmentId, userId]);
+    if (!installment || installment.length === 0) {
+      return res.status(404).json({ error: 'Installment not found' });
+    }
+    
+    await db.run('DELETE FROM installments WHERE id = ? AND user_id = ?', [installmentId, userId]);
+    console.log('Installment deleted successfully:', installmentId);
     res.json({ message: 'Installment deleted successfully' });
   } catch (error) {
-    console.error('Installment delete error:', error);
+    console.error('Installment deletion error:', error);
     res.status(500).json({ 
-      error: 'Internal server error',
+      error: 'Failed to delete installment',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
