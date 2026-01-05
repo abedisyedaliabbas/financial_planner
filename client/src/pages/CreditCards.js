@@ -560,9 +560,16 @@ const CreditCards = () => {
                   <label>Credit Limit * ({cardCurrency})</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
+                    min="0"
                     value={cardFormData.credit_limit}
-                    onChange={(e) => setCardFormData({ ...cardFormData, credit_limit: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        setCardFormData({ ...cardFormData, credit_limit: value });
+                      }
+                    }}
                     required
                   />
                   {displayCurrency && displayCurrency !== cardCurrency && cardFormData.credit_limit && (
@@ -578,9 +585,16 @@ const CreditCards = () => {
                   <label>Outstanding Amount ({cardCurrency})</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
+                    min="0"
                     value={cardFormData.current_balance}
-                    onChange={(e) => setCardFormData({ ...cardFormData, current_balance: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        setCardFormData({ ...cardFormData, current_balance: value });
+                      }
+                    }}
                   />
                   {displayCurrency && displayCurrency !== cardCurrency && cardFormData.current_balance && (
                     <div style={{ marginTop: '5px', fontSize: '12px', color: '#667eea', fontWeight: '500' }}>
@@ -597,19 +611,33 @@ const CreditCards = () => {
                   <label>Interest Rate (%)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
+                    min="0"
+                    max="100"
                     value={cardFormData.interest_rate}
-                    onChange={(e) => setCardFormData({ ...cardFormData, interest_rate: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        setCardFormData({ ...cardFormData, interest_rate: value });
+                      }
+                    }}
                   />
                 </div>
                 <div className="form-group">
                   <label>Due Date (Day of Month)</label>
                   <input
                     type="number"
+                    inputMode="numeric"
                     min="1"
                     max="31"
                     value={cardFormData.due_date}
-                    onChange={(e) => setCardFormData({ ...cardFormData, due_date: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d+$/.test(value)) {
+                        setCardFormData({ ...cardFormData, due_date: value });
+                      }
+                    }}
                   />
                 </div>
               </div>

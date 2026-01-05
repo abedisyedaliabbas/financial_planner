@@ -359,9 +359,16 @@ const Expenses = () => {
                   <label>Amount *</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     step="0.01"
+                    min="0"
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        setFormData({ ...formData, amount: value });
+                      }
+                    }}
                     required
                   />
                 </div>
