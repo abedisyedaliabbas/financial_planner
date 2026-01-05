@@ -666,12 +666,27 @@ router.delete('/savings/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM savings WHERE id = ? AND user_id = ?', [id, userId]);
+    const savingsId = parseInt(id);
+    
+    if (isNaN(savingsId)) {
+      return res.status(400).json({ error: 'Invalid savings account ID' });
+    }
+    
+    // Check if savings account exists and belongs to user
+    const savings = await db.query('SELECT id FROM savings WHERE id = ? AND user_id = ?', [savingsId, userId]);
+    if (!savings || savings.length === 0) {
+      return res.status(404).json({ error: 'Savings account not found' });
+    }
+    
+    // Delete the savings account
+    await db.run('DELETE FROM savings WHERE id = ? AND user_id = ?', [savingsId, userId]);
+    
+    console.log('Savings account deleted successfully:', savingsId);
     res.json({ message: 'Savings account deleted successfully' });
   } catch (error) {
-    console.error('Savings delete error:', error);
+    console.error('Savings account deletion error:', error);
     res.status(500).json({ 
-      error: 'Internal server error',
+      error: 'Failed to delete savings account',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -1078,17 +1093,27 @@ router.delete('/debit-cards/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
+    const cardId = parseInt(id);
+    
+    if (isNaN(cardId)) {
+      return res.status(400).json({ error: 'Invalid debit card ID' });
+    }
     
     // Verify card belongs to user
-    const card = await db.query('SELECT * FROM debit_cards WHERE id = ? AND user_id = ?', [id, userId]);
+    const card = await db.query('SELECT * FROM debit_cards WHERE id = ? AND user_id = ?', [cardId, userId]);
     if (!card || card.length === 0) {
       return res.status(404).json({ error: 'Debit card not found' });
     }
     
-    await db.run('DELETE FROM debit_cards WHERE id = ? AND user_id = ?', [id, userId]);
+    await db.run('DELETE FROM debit_cards WHERE id = ? AND user_id = ?', [cardId, userId]);
+    console.log('Debit card deleted successfully:', cardId);
     res.json({ message: 'Debit card deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Debit card deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete debit card',
+      message: error.message 
+    });
   }
 });
 
@@ -1096,10 +1121,32 @@ router.delete('/bank-accounts/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM bank_accounts WHERE id = ? AND user_id = ?', [id, userId]);
+    const accountId = parseInt(id);
+    
+    if (isNaN(accountId)) {
+      return res.status(400).json({ error: 'Invalid account ID' });
+    }
+    
+    // Check if account exists and belongs to user
+    const account = await db.query('SELECT id FROM bank_accounts WHERE id = ? AND user_id = ?', [accountId, userId]);
+    if (!account || account.length === 0) {
+      return res.status(404).json({ error: 'Bank account not found' });
+    }
+    
+    // Delete associated debit cards first (if any)
+    await db.run('DELETE FROM debit_cards WHERE bank_account_id = ? AND user_id = ?', [accountId, userId]);
+    
+    // Delete the bank account
+    await db.run('DELETE FROM bank_accounts WHERE id = ? AND user_id = ?', [accountId, userId]);
+    
+    console.log('Bank account deleted successfully:', accountId);
     res.json({ message: 'Bank account deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Bank account deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete bank account',
+      message: error.message 
+    });
   }
 });
 
@@ -1124,10 +1171,29 @@ router.delete('/credit-cards/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM credit_cards WHERE id = ? AND user_id = ?', [id, userId]);
+    const cardId = parseInt(id);
+    
+    if (isNaN(cardId)) {
+      return res.status(400).json({ error: 'Invalid card ID' });
+    }
+    
+    // Check if card exists and belongs to user
+    const card = await db.query('SELECT id FROM credit_cards WHERE id = ? AND user_id = ?', [cardId, userId]);
+    if (!card || card.length === 0) {
+      return res.status(404).json({ error: 'Credit card not found' });
+    }
+    
+    // Delete the credit card
+    await db.run('DELETE FROM credit_cards WHERE id = ? AND user_id = ?', [cardId, userId]);
+    
+    console.log('Credit card deleted successfully:', cardId);
     res.json({ message: 'Credit card deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Credit card deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete credit card',
+      message: error.message 
+    });
   }
 });
 
@@ -1202,7 +1268,13 @@ router.delete('/expenses/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    const expense = await db.query('SELECT * FROM expenses WHERE id = ? AND user_id = ?', [id, userId]);
+    const expenseId = parseInt(id);
+    
+    if (isNaN(expenseId)) {
+      return res.status(400).json({ error: 'Invalid expense ID' });
+    }
+    
+    const expense = await db.query('SELECT * FROM expenses WHERE id = ? AND user_id = ?', [expenseId, userId]);
     if (expense.length > 0) {
       // Revert credit card balance if needed
       if (expense[0].credit_card_id) {
@@ -1215,11 +1287,18 @@ router.delete('/expenses/:id', async (req, res) => {
           await db.run('UPDATE bank_accounts SET current_balance = current_balance + ? WHERE id = ? AND user_id = ?', [expense[0].amount, debitCard[0].bank_account_id, userId]);
         }
       }
-      await db.run('DELETE FROM expenses WHERE id = ? AND user_id = ?', [id, userId]);
+      await db.run('DELETE FROM expenses WHERE id = ? AND user_id = ?', [expenseId, userId]);
+      console.log('Expense deleted successfully:', expenseId);
+      res.json({ message: 'Expense deleted successfully' });
+    } else {
+      res.status(404).json({ error: 'Expense not found' });
     }
-    res.json({ message: 'Expense deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Expense deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete expense',
+      message: error.message 
+    });
   }
 });
 
@@ -1244,10 +1323,29 @@ router.delete('/income/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM income WHERE id = ? AND user_id = ?', [id, userId]);
+    const incomeId = parseInt(id);
+    
+    if (isNaN(incomeId)) {
+      return res.status(400).json({ error: 'Invalid income ID' });
+    }
+    
+    // Check if income exists and belongs to user
+    const income = await db.query('SELECT id FROM income WHERE id = ? AND user_id = ?', [incomeId, userId]);
+    if (!income || income.length === 0) {
+      return res.status(404).json({ error: 'Income not found' });
+    }
+    
+    // Delete the income
+    await db.run('DELETE FROM income WHERE id = ? AND user_id = ?', [incomeId, userId]);
+    
+    console.log('Income deleted successfully:', incomeId);
     res.json({ message: 'Income deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Income deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete income',
+      message: error.message 
+    });
   }
 });
 
@@ -1272,10 +1370,29 @@ router.delete('/financial-goals/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM financial_goals WHERE id = ? AND user_id = ?', [id, userId]);
+    const goalId = parseInt(id);
+    
+    if (isNaN(goalId)) {
+      return res.status(400).json({ error: 'Invalid goal ID' });
+    }
+    
+    // Check if goal exists and belongs to user
+    const goal = await db.query('SELECT id FROM financial_goals WHERE id = ? AND user_id = ?', [goalId, userId]);
+    if (!goal || goal.length === 0) {
+      return res.status(404).json({ error: 'Financial goal not found' });
+    }
+    
+    // Delete the financial goal
+    await db.run('DELETE FROM financial_goals WHERE id = ? AND user_id = ?', [goalId, userId]);
+    
+    console.log('Financial goal deleted successfully:', goalId);
     res.json({ message: 'Financial goal deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Financial goal deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete financial goal',
+      message: error.message 
+    });
   }
 });
 
@@ -1300,10 +1417,27 @@ router.delete('/bill-reminders/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM bill_reminders WHERE id = ? AND user_id = ?', [id, userId]);
+    const billId = parseInt(id);
+    
+    if (isNaN(billId)) {
+      return res.status(400).json({ error: 'Invalid bill reminder ID' });
+    }
+    
+    // Check if bill exists and belongs to user
+    const bill = await db.query('SELECT id FROM bill_reminders WHERE id = ? AND user_id = ?', [billId, userId]);
+    if (!bill || bill.length === 0) {
+      return res.status(404).json({ error: 'Bill reminder not found' });
+    }
+    
+    await db.run('DELETE FROM bill_reminders WHERE id = ? AND user_id = ?', [billId, userId]);
+    console.log('Bill reminder deleted successfully:', billId);
     res.json({ message: 'Bill reminder deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Bill reminder deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete bill reminder',
+      message: error.message 
+    });
   }
 });
 
@@ -1383,12 +1517,25 @@ router.delete('/budget/:id', requireFeature('budget'), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM budget WHERE id = ? AND user_id = ?', [id, userId]);
+    const budgetId = parseInt(id);
+    
+    if (isNaN(budgetId)) {
+      return res.status(400).json({ error: 'Invalid budget ID' });
+    }
+    
+    // Check if budget exists and belongs to user
+    const budget = await db.query('SELECT id FROM budget WHERE id = ? AND user_id = ?', [budgetId, userId]);
+    if (!budget || budget.length === 0) {
+      return res.status(404).json({ error: 'Budget not found' });
+    }
+    
+    await db.run('DELETE FROM budget WHERE id = ? AND user_id = ?', [budgetId, userId]);
+    console.log('Budget deleted successfully:', budgetId);
     res.json({ message: 'Budget deleted successfully' });
   } catch (error) {
-    console.error('Budget delete error:', error);
+    console.error('Budget deletion error:', error);
     res.status(500).json({ 
-      error: 'Internal server error',
+      error: 'Failed to delete budget',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -1699,12 +1846,25 @@ router.delete('/loans/:id', async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM loans WHERE id = ? AND user_id = ?', [id, userId]);
+    const loanId = parseInt(id);
+    
+    if (isNaN(loanId)) {
+      return res.status(400).json({ error: 'Invalid loan ID' });
+    }
+    
+    // Check if loan exists and belongs to user
+    const loan = await db.query('SELECT id FROM loans WHERE id = ? AND user_id = ?', [loanId, userId]);
+    if (!loan || loan.length === 0) {
+      return res.status(404).json({ error: 'Loan not found' });
+    }
+    
+    await db.run('DELETE FROM loans WHERE id = ? AND user_id = ?', [loanId, userId]);
+    console.log('Loan deleted successfully:', loanId);
     res.json({ message: 'Loan deleted successfully' });
   } catch (error) {
-    console.error('Loan delete error:', error);
+    console.error('Loan deletion error:', error);
     res.status(500).json({ 
-      error: 'Internal server error',
+      error: 'Failed to delete loan',
       message: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -1732,10 +1892,27 @@ router.delete('/stocks/:id', requireTier('premium'), async (req, res) => {
   try {
     const userId = req.user.id;
     const { id } = req.params;
-    await db.run('DELETE FROM stocks WHERE id = ? AND user_id = ?', [id, userId]);
+    const stockId = parseInt(id);
+    
+    if (isNaN(stockId)) {
+      return res.status(400).json({ error: 'Invalid stock ID' });
+    }
+    
+    // Check if stock exists and belongs to user
+    const stock = await db.query('SELECT id FROM stocks WHERE id = ? AND user_id = ?', [stockId, userId]);
+    if (!stock || stock.length === 0) {
+      return res.status(404).json({ error: 'Stock not found' });
+    }
+    
+    await db.run('DELETE FROM stocks WHERE id = ? AND user_id = ?', [stockId, userId]);
+    console.log('Stock deleted successfully:', stockId);
     res.json({ message: 'Stock deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Stock deletion error:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete stock',
+      message: error.message 
+    });
   }
 });
 
