@@ -225,36 +225,28 @@ const BankAccounts = () => {
 
         {/* Summary Cards */}
         {accounts.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Total Balance</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrencyUtil(totalBalance, displayCurr)}</div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                {accounts.length} account{accounts.length !== 1 ? 's' : ''}
-              </div>
+          <div className="summary-cards-grid">
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', margin: 0 }}>
+              <h3>Total Balance</h3>
+              <div className="summary-value">{formatCurrencyUtil(totalBalance, displayCurr)}</div>
+              <div className="summary-subtitle">{accounts.length} account{accounts.length !== 1 ? 's' : ''}</div>
             </div>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Total Accounts</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>{accounts.length}</div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                {Object.keys(accountsByType).length} different types
-              </div>
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', margin: 0 }}>
+              <h3>Total Accounts</h3>
+              <div className="summary-value">{accounts.length}</div>
+              <div className="summary-subtitle">{Object.keys(accountsByType).length} different types</div>
             </div>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Debit Cards</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>{totalDebitCards}</div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                Across all accounts
-              </div>
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', margin: 0 }}>
+              <h3>Debit Cards</h3>
+              <div className="summary-value">{totalDebitCards}</div>
+              <div className="summary-subtitle">Across all accounts</div>
             </div>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Average Balance</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white', margin: 0 }}>
+              <h3>Average Balance</h3>
+              <div className="summary-value">
                 {formatCurrencyUtil(accounts.length > 0 ? totalBalance / accounts.length : 0, displayCurr)}
               </div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                Per account
-              </div>
+              <div className="summary-subtitle">Per account</div>
             </div>
           </div>
         )}

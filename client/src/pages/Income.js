@@ -201,35 +201,27 @@ const Income = () => {
 
         {/* Summary Cards */}
         {income.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Total Income</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrencyUtil(totalIncome, displayCurrency)}</div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                {income.length} entry{income.length !== 1 ? 'ies' : 'y'}
-              </div>
+          <div className="summary-cards-grid">
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', margin: 0 }}>
+              <h3>Total Income</h3>
+              <div className="summary-value">{formatCurrencyUtil(totalIncome, displayCurrency)}</div>
+              <div className="summary-subtitle">{income.length} entry{income.length !== 1 ? 'ies' : 'y'}</div>
             </div>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>This Month</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrencyUtil(monthlyIncome, displayCurrency)}</div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                {new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-              </div>
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', margin: 0 }}>
+              <h3>This Month</h3>
+              <div className="summary-value">{formatCurrencyUtil(monthlyIncome, displayCurrency)}</div>
+              <div className="summary-subtitle">{new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</div>
             </div>
-            <div className="card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white', margin: 0, padding: '15px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Average Income</h3>
-              <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrencyUtil(avgIncome, displayCurrency)}</div>
-              <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                Per entry
-              </div>
+            <div className="summary-card" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white', margin: 0 }}>
+              <h3>Average Income</h3>
+              <div className="summary-value">{formatCurrencyUtil(avgIncome, displayCurrency)}</div>
+              <div className="summary-subtitle">Per entry</div>
             </div>
             {topIncomeType && (
-              <div className="card" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: 'white', margin: 0, padding: '15px' }}>
-                <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Top Source</h3>
-                <div style={{ fontSize: '22px', fontWeight: '700' }}>{topIncomeType[0]}</div>
-                <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
-                  {formatCurrencyUtil(topIncomeType[1], displayCurrency)}
-                </div>
+              <div className="summary-card" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', color: 'white', margin: 0 }}>
+                <h3>Top Source</h3>
+                <div className="summary-value">{topIncomeType[0]}</div>
+                <div className="summary-subtitle">{formatCurrencyUtil(topIncomeType[1], displayCurrency)}</div>
               </div>
             )}
           </div>

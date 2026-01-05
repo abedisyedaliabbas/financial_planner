@@ -330,35 +330,38 @@
   }
   
   .stats-grid-enhanced {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 15px !important;
   }
 
   .stat-card-enhanced {
-    padding: 14px;
-    min-height: 90px;
-    gap: 12px;
+    padding: 10px !important;
+    min-height: auto !important;
+    gap: 8px !important;
   }
 
   .stat-icon {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 14px !important;
   }
 
   .stat-content h3 {
-    font-size: 11px;
-    margin-bottom: 4px;
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+    line-height: 1.2 !important;
   }
   
   .stat-value {
-    font-size: 18px;
-    margin-bottom: 4px;
+    font-size: 14px !important;
+    margin-bottom: 2px !important;
+    line-height: 1.2 !important;
   }
 
   .stat-change {
-    font-size: 10px;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
   }
 
   .dashboard-actions {
@@ -417,12 +420,12 @@
   }
 
   .stat-card-enhanced {
-    padding: 12px;
-    min-height: 80px;
+    padding: 10px !important;
+    min-height: auto !important;
   }
 
   .stat-value {
-    font-size: 16px;
+    font-size: 13px !important;
   }
 
   .chart-card {

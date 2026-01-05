@@ -281,4 +281,38 @@
     padding: 14px 16px;
     min-height: 44px;
   }
+
+  /* Compact summary cards for mobile */
+  .summary-cards-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 15px !important;
+  }
+
+  .summary-card {
+    padding: 10px !important;
+    min-height: auto !important;
+  }
+
+  .summary-card h3 {
+    margin: 0 0 4px 0 !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+  }
+
+  .summary-value {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    margin: 4px 0 !important;
+  }
+
+  .summary-subtitle {
+    font-size: 9px !important;
+    margin-top: 2px !important;
+    opacity: 0.9 !important;
+    line-height: 1.2 !important;
+  }
 }

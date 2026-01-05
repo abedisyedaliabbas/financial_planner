@@ -186,25 +186,25 @@ const CreditCards = () => {
     <div>
       {/* Summary Cards */}
       {cards.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-          <div className="card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', margin: 0, padding: '15px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Total Credit Limit</h3>
-            <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrency(totalCreditLimit, tableDisplayCurrency || 'SGD')}</div>
+        <div className="summary-cards-grid">
+          <div className="summary-card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', margin: 0 }}>
+            <h3>Total Credit Limit</h3>
+            <div className="summary-value">{formatCurrency(totalCreditLimit, tableDisplayCurrency || 'SGD')}</div>
           </div>
-          <div className="card" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', margin: 0, padding: '15px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Total Outstanding (Owed to Bank)</h3>
-            <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrency(totalBalance, tableDisplayCurrency || 'SGD')}</div>
+          <div className="summary-card" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', margin: 0 }}>
+            <h3>Total Outstanding</h3>
+            <div className="summary-value">{formatCurrency(totalBalance, tableDisplayCurrency || 'SGD')}</div>
           </div>
-          <div className="card" style={{ background: overallUtilization >= 80 ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', margin: 0, padding: '15px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Credit Utilization</h3>
-            <div style={{ fontSize: '22px', fontWeight: '700' }}>{overallUtilization}%</div>
-            <div style={{ fontSize: '11px', marginTop: '4px', opacity: 0.9 }}>
+          <div className="summary-card" style={{ background: overallUtilization >= 80 ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', margin: 0 }}>
+            <h3>Credit Utilization</h3>
+            <div className="summary-value">{overallUtilization}%</div>
+            <div className="summary-subtitle">
               {overallUtilization >= 80 ? '⚠️ High' : overallUtilization >= 50 ? '⚠️ Moderate' : '✓ Good'}
             </div>
           </div>
-          <div className="card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', margin: 0, padding: '15px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'white', fontSize: '13px', fontWeight: '600' }}>Available Credit (Remaining)</h3>
-            <div style={{ fontSize: '22px', fontWeight: '700' }}>{formatCurrency(totalCreditLimit - totalBalance, tableDisplayCurrency || 'SGD')}</div>
+          <div className="summary-card" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', color: 'white', margin: 0 }}>
+            <h3>Available Credit</h3>
+            <div className="summary-value">{formatCurrency(totalCreditLimit - totalBalance, tableDisplayCurrency || 'SGD')}</div>
           </div>
         </div>
       )}
