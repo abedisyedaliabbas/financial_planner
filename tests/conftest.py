@@ -41,7 +41,22 @@ def driver():
     # User agent to avoid detection
     chrome_options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
     
-    service = Service(ChromeDriverManager().install())
+    # Try to install ChromeDriver with error handling
+    try:
+        # Use latest stable version if Chrome detection fails
+        from webdriver_manager.core.os_manager import ChromeType
+        service = Service(ChromeDriverManager().install())
+    except Exception as e:
+        print(f"Warning: ChromeDriverManager failed: {e}")
+        print("Attempting to use system ChromeDriver or latest version...")
+        try:
+            # Try with explicit version
+            service = Service(ChromeDriverManager(version="latest").install())
+        except Exception as e2:
+            print(f"Error: Could not install ChromeDriver: {e2}")
+            print("Please ensure Chrome is installed and try again.")
+            raise
+    
     driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.implicitly_wait(10)
     

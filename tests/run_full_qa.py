@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Comprehensive QA Test Runner - Tests ALL Features
 Run this script to perform complete QA testing of the Financial Planner application
@@ -7,6 +8,12 @@ import subprocess
 import sys
 import os
 from datetime import datetime
+
+# Fix Windows console encoding
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 def print_header(text):
     """Print a formatted header"""
@@ -49,9 +56,10 @@ def run_full_qa():
     print("\n" + "-" * 80)
     print("⏳ Starting tests... This may take several minutes.\n")
     
-    # Run pytest with comprehensive options
+    # Run pytest with comprehensive options (use python -m pytest for Windows compatibility)
     pytest_args = [
-        "pytest",
+        sys.executable,  # Use the same Python interpreter
+        "-m", "pytest",
         "-v",  # Verbose output
         "--tb=short",  # Short traceback format
         f"--html={html_report}",  # HTML report
@@ -88,14 +96,15 @@ def run_full_qa():
         print(f"📝 Open the HTML report in your browser to see full test results.")
         print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         
-        # Create summary file
-        with open(summary_file, 'w') as f:
+        # Create summary file (with UTF-8 encoding for Windows compatibility)
+        with open(summary_file, 'w', encoding='utf-8') as f:
             f.write("=" * 80 + "\n")
             f.write("FINANCIAL PLANNER - QA TEST SUMMARY\n")
             f.write("=" * 80 + "\n\n")
             f.write(f"Test Run: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
             f.write(f"Exit Code: {result.returncode}\n")
-            f.write(f"Status: {'✅ ALL TESTS PASSED' if result.returncode == 0 else '⚠️  SOME TESTS FAILED'}\n")
+            status_text = "ALL TESTS PASSED" if result.returncode == 0 else "SOME TESTS FAILED"
+            f.write(f"Status: {status_text}\n")
             f.write(f"\nHTML Report: {html_report}\n")
             f.write(f"JUnit XML: {os.path.join(test_dir, 'junit.xml')}\n")
         
